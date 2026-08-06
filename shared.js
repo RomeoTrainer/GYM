@@ -612,6 +612,76 @@ function exportDatabaseJSON() {
   if (typeof showToast === 'function') showToast('📦 Copia de seguridad exportada en JSON', 'success');
 }
 
+function importDatabaseJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+      if (!importedData || typeof importedData !== 'object') {
+        throw new Error('Formato JSON inválido');
+      }
+
+      if (importedData.usuarios && Array.isArray(importedData.usuarios)) DB.usuarios = importedData.usuarios;
+      if (importedData.rutinas && Array.isArray(importedData.rutinas)) DB.rutinas = importedData.rutinas;
+      if (importedData.progresos && Array.isArray(importedData.progresos)) DB.progresos = importedData.progresos;
+      if (importedData.sesiones && Array.isArray(importedData.sesiones)) DB.sesiones = importedData.sesiones;
+      if (importedData.packs && Array.isArray(importedData.packs)) DB.packs = importedData.packs;
+
+      try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(err){}
+
+      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+        try {
+          await SupabaseSync.syncAll();
+        } catch(syncErr) {}
+      }
+
+      window.dispatchEvent(new Event('romeo_db_loaded'));
+      if (typeof showToast === 'function') showToast('✅ Copia de seguridad restaurada exitosamente', 'success');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 600);
+
+    } catch (err) {
+      alert('Error al leer el archivo de backup: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function abrirModalBackupDB() {
+  let modal = document.getElementById('modal-backup-db');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'modal-backup-db';
+  modal.className = 'modal-overlay active';
+  modal.style.zIndex = '10000';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:480px; width:92%; background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:24px; color:#fff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0; font-size:16px; font-weight:800;">📦 Copia de Seguridad & Datos</h3>
+        <button onclick="document.getElementById('modal-backup-db').remove()" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">
+        Exporta una copia completa de tus datos o restáurala desde un archivo JSON descargado previamente.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button class="btn-primary" onclick="exportDatabaseJSON()" style="width:100%; justify-content:center; padding:12px;">
+          📥 Descargar Copia JSON (Exportar)
+        </button>
+        <label class="btn-secondary" style="width:100%; display:flex; justify-content:center; align-items:center; padding:12px; cursor:pointer; margin:0;">
+          📤 Restaurar / Importar Archivo JSON
+          <input type="file" accept=".json" onchange="importDatabaseJSON(event)" style="display:none;" />
+        </label>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
 // ===================== SUPABASE MODAL & UI FUNCTIONS =====================
 function abrirModalSupabase() {
   let modal = document.getElementById('modal-supabase-config');
