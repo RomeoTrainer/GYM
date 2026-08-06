@@ -1071,7 +1071,8 @@ async function initPersist() {
       }
     },
     (hasExistingHandle) => {
-      showPersistBanner(hasExistingHandle);
+      // Banner desactivado para evitar avisos emergentes innecesarios en móviles/web
+      // showPersistBanner(hasExistingHandle);
     }
   );
 }
