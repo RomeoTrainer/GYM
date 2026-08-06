@@ -115,6 +115,7 @@
 <script>
   document.getElementById('sidebar-container').innerHTML = buildSidebar('macros');
   document.getElementById('topbar-container').innerHTML = buildTopbar('Macronutrientes');
+  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('macros');
   document.getElementById('toast-container').innerHTML = buildToast();
 
   const sel = document.getElementById('sel-usuario');
@@ -582,5 +583,6 @@
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
   }
 </script>
+<div id="bottom-nav-container"></div>
 </body>
 </html>

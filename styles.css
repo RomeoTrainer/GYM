@@ -3189,4 +3189,120 @@ form { padding: 20px 24px; }
   }
 }
 
+/* ============================================================
+   MEJORAS PREMIUM v3.0: Bottom Nav, Cloud Status & Plate Calc
+   ============================================================ */
+
+/* ── Floating Bottom Navigation Bar (Mobile & Tablet) ── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(20, 20, 20, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 999;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 4px;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 600;
+  flex: 1;
+  height: 100%;
+  transition: color 0.2s, transform 0.15s;
+}
+
+.bottom-nav-item svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+  transition: stroke 0.2s, transform 0.2s;
+}
+
+.bottom-nav-item.active {
+  color: var(--pink);
+}
+
+.bottom-nav-item.active svg {
+  stroke: var(--pink);
+  transform: translateY(-2px);
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.94);
+}
+
+@media (max-width: 768px) {
+  .sidebar { display: none !important; }
+  .main-content { 
+    margin-left: 0 !important;
+    padding-bottom: 84px !important;
+  }
+  .bottom-nav { display: flex !important; }
+}
+
+/* ── Cloud Status & Backup Badge ── */
+.cloud-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.cloud-badge-btn:hover {
+  border-color: var(--pink);
+  background: var(--bg-hover);
+}
+.cloud-dot-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.cloud-dot-status.offline {
+  background: var(--yellow);
+  box-shadow: 0 0 8px var(--yellow);
+}
+
+/* ── Plate Calculator & Modals ── */
+.plate-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.plate-badge {
+  background: linear-gradient(135deg, rgba(255,60,172,0.12), rgba(43,134,197,0.12));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.plate-weight { font-size: 14px; font-weight: 800; color: #fff; }
+.plate-count { font-size: 10px; color: var(--pink); font-weight: 700; margin-top: 2px; }
+
+
 

@@ -543,6 +543,9 @@ function buildTopbar(title, actionsHtml = '') {
     <div class="topbar-title">${title}</div>
     <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
       ${clientSelector}
+      <button type="button" onclick="exportDatabaseJSON()" class="btn-ghost" style="padding:6px 10px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:4px;" title="Descargar Copia de Seguridad JSON">
+        📦 Backup
+      </button>
       <button type="button" onclick="abrirModalSupabase()" class="btn-ghost" style="padding:6px 10px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:5px;" title="Base de Datos 24/7 en la Nube Supabase">
         ☁️ Nube <span id="supabase-status-dot" style="width:8px;height:8px;border-radius:50%;background:${cloudStatusDot};display:inline-block;"></span>
       </button>
@@ -552,6 +555,39 @@ function buildTopbar(title, actionsHtml = '') {
       <div class="topbar-actions">${actionsHtml}</div>
     </div>
   </header>`;
+}
+
+function buildBottomNav(activePage = 'dashboard') {
+  const pages = [
+    { id:'dashboard',     href:'index.html',           label:'Inicio',       icon:`<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>` },
+    { id:'usuarios',      href:'usuarios.html',        label:'Clientes',     icon:`<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>` },
+    { id:'rutinas',       href:'rutinas.html',         label:'Rutinas',      icon:`<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>` },
+    { id:'entrenamiento', href:'entrenamiento.html',   label:'Entrenar',     icon:`<polyline points="13 2 13 9 20 9"/><path d="M20 9L13 2"/><path d="M4 16h16"/>` },
+    { id:'progreso',      href:'progreso.html',        label:'Progreso',     icon:`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>` },
+    { id:'recetas',       href:'recetas.html',         label:'Nutrición',    icon:`<path d="M12 2a10 10 0 1 0 10 10H12V2z"/>` },
+  ];
+
+  return `
+  <nav class="bottom-nav">
+    ${pages.map(p => `
+      <a href="${p.href}" class="bottom-nav-item ${activePage === p.id ? 'active' : ''}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${p.icon}</svg>
+        <span>${p.label}</span>
+      </a>
+    `).join('')}
+  </nav>`;
+}
+
+function exportDatabaseJSON() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(DB, null, 2));
+  const downloadAnchor = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `romeo_pt_backup_${dateStr}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  if (typeof showToast === 'function') showToast('📦 Copia de seguridad exportada en JSON', 'success');
 }
 
 // ===================== SUPABASE MODAL & UI FUNCTIONS =====================

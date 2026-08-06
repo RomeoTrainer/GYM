@@ -351,6 +351,7 @@
 <script>
   document.getElementById('sidebar-container').innerHTML = buildSidebar('rutinas');
   document.getElementById('topbar-container').innerHTML = buildTopbar('Creador de Rutinas');
+  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('rutinas');
   document.getElementById('toast-container').innerHTML = buildToast();
 
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -2361,5 +2362,6 @@
   };
   // --- FIN LIBRARY EDIT LOGIC ---
 </script>
+<div id="bottom-nav-container"></div>
 </body>
 </html>

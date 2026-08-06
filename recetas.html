@@ -254,6 +254,7 @@
 <script>
   document.getElementById('sidebar-container').innerHTML = buildSidebar('recetas');
   document.getElementById('topbar-container').innerHTML = buildTopbar('Nutrición y Recetas');
+  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('recetas');
   document.getElementById('toast-container').innerHTML = buildToast();
 
   // ===================== CUSTOM RECIPES (localStorage) =====================
@@ -762,5 +763,6 @@
     if (typeof renderGrid === 'function') renderGrid(ALL_RECETAS);
   });
 </script>
+<div id="bottom-nav-container"></div>
 </body>
 </html>

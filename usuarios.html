@@ -202,6 +202,7 @@
 <script>
   document.getElementById('sidebar-container').innerHTML = buildSidebar('usuarios');
   document.getElementById('topbar-container').innerHTML = buildTopbar('Clientes', `<button class="btn-primary" onclick="abrirModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Cliente</button>`);
+  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('usuarios');
   document.getElementById('toast-container').innerHTML = buildToast();
 
   let filtroEstado = 'Activo';
@@ -304,8 +305,8 @@
         <div class="user-card-actions">
           <button class="btn-ghost" style="flex:1" onclick="verPerfil('${u.id}')">👁 Perfil</button>
           <button class="btn-ghost" onclick="programarSesion('${u.id}')" title="Programar Sesión">📅</button>
-          <button class="btn-ghost" onclick="abrirWhatsAppCliente('${u.telefono}')" title="Enviar WhatsApp" style="color:#25D366; display:flex; align-items:center; justify-content:center;">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.1.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg>
+          <button class="btn-ghost" onclick="abrirReporteWhatsApp('${u.id}')" title="Generar Reporte WhatsApp" style="color:#25D366; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px 8px; flex:1;">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.1.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg> Reporte WA
           </button>
           <button class="btn-ghost" onclick="abrirModal('${u.id}')" title="Editar Cliente">✏️</button>
           <button class="btn-ghost btn-danger" onclick="eliminarUsuario('${u.id}')" title="Eliminar Cliente">🗑️</button>
@@ -905,6 +906,62 @@
   // Auto-open perfil if ?perfil=id
   const perfilId = new URLSearchParams(window.location.search).get('perfil');
   if (perfilId) verPerfil(perfilId);
+  function abrirReporteWhatsApp(id) {
+    const u = (DB.usuarios || []).find(x => x.id === id);
+    if (!u) return;
+
+    const completitud = calcCompletitudUsuario(u.id);
+    const rutinasCount = (DB.rutinas || []).filter(r => r.usuarioId === u.id).length;
+    const medicionesCount = (DB.progresos || []).filter(p => p.usuarioId === u.id).length;
+
+    const texto = 
+`🏋️ *REPORTE DE PROGRESO - ROMEO PT* 🏋️
+
+👤 *Cliente:* ${u.nombre}
+🎯 *Objetivo:* ${u.objetivo || 'Entrenamiento'}
+📊 *Completitud Semanal:* ${completitud}%
+⚖️ *Peso Actual:* ${u.peso} kg
+📋 *Rutinas Asignadas:* ${rutinasCount}
+📈 *Registros de Progreso:* ${medicionesCount}
+
+💪 _¡Sigue así, la constancia es la clave del resultado!_`;
+
+    let modal = document.getElementById('modal-wa-report');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'modal-wa-report';
+    modal.className = 'modal-overlay active';
+    modal.style.zIndex = '10000';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:480px; width:92%; background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:22px; color:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0; font-size:16px; font-weight:800; color:#25D366; display:flex; align-items:center; gap:6px;">📱 Reporte para WhatsApp</h3>
+          <button onclick="document.getElementById('modal-wa-report').remove()" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+        <textarea id="wa-text-content" rows="10" style="width:100%; background:var(--bg-input); border:1px solid var(--border); border-radius:10px; padding:12px; color:#fff; font-family:monospace; font-size:12px; line-height:1.5; resize:none;" readonly>${texto}</textarea>
+        <div style="display:flex; gap:10px; margin-top:14px;">
+          <button class="btn-secondary" style="flex:1;" onclick="copiarReporteWA()">📋 Copiar Texto</button>
+          <button class="btn-primary" style="flex:1; background:#25D366; border:none;" onclick="enviarWACliente('${u.telefono}')">🚀 Abrir WhatsApp</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function copiarReporteWA() {
+    const content = document.getElementById('wa-text-content');
+    content.select();
+    document.execCommand('copy');
+    if (typeof showToast === 'function') showToast('📋 Reporte copiado al portapapeles', 'success');
+  }
+
+  function enviarWACliente(tel) {
+    const content = document.getElementById('wa-text-content').value;
+    const numClean = (tel || '').replace(/\D/g, '');
+    const url = numClean ? `https://wa.me/${numClean}?text=${encodeURIComponent(content)}` : `https://wa.me/?text=${encodeURIComponent(content)}`;
+    window.open(url, '_blank');
+  }
 </script>
+<div id="bottom-nav-container"></div>
 </body>
 </html>

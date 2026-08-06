@@ -215,6 +215,7 @@
 <script>
   document.getElementById('sidebar-container').innerHTML = buildSidebar('progreso');
   document.getElementById('topbar-container').innerHTML = buildTopbar('Seguimiento Corporal');
+  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('progreso');
   document.getElementById('toast-container').innerHTML = buildToast();
 
   const sel = document.getElementById('sel-usuario');
@@ -1550,5 +1551,6 @@
     if (sel && sel.value) renderProgreso(sel.value);
   });
 </script>
+<div id="bottom-nav-container"></div>
 </body>
 </html>
