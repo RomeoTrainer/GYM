@@ -642,6 +642,7 @@
     document.getElementById('kpi-clientes').textContent = DB.usuarios.length;
     document.getElementById('kpi-clientes-sub').textContent = DB.usuarios.length > 0 ? DB.usuarios.length + ' registrados' : '';
     actualizarWidgetMacros();
+  });
   document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('dashboard');
 </script>
 <div id="bottom-nav-container"></div>
