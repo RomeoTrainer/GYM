@@ -1348,7 +1348,7 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
 
         // Mostrar modal de actualización si hay un worker en espera
         if (reg.waiting) {
-          mostrarModalActualizacionApp(reg.waiting);
+          reg.waiting.postMessage('SKIP_WAITING');
         }
 
         reg.onupdatefound = () => {
@@ -1356,7 +1356,7 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
           if (installingWorker) {
             installingWorker.onstatechange = () => {
               if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                mostrarModalActualizacionApp(installingWorker);
+                installingWorker.postMessage('SKIP_WAITING');
               }
             };
           }
