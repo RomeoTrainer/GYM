@@ -4,6 +4,7 @@
   "description": "App para control de rutinas y progreso - Romeo Personal Trainer",
   "main": "server.js",
   "scripts": {
+    "build": "echo 'Static build complete'",
     "start": "node server.js"
   },
   "dependencies": {
