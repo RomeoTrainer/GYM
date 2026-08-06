@@ -20,7 +20,7 @@ app.get('/sw.js', (req, res) => {
 
   let swContent = fs.readFileSync(swPath, 'utf8');
   let maxTime = 0;
-  const filesToCheck = ['shared.js', 'styles.css', 'rutinas.html', 'index.html', 'usuarios.html', 'entrenamiento.html', 'progreso.html', 'recetas.html', 'macros.html', 'persist.js'];
+  const filesToCheck = ['shared.js', 'styles.css', 'rutinas.html', 'index.html', 'usuarios.html', 'entrenamiento.html', 'progreso.html', 'recetas.html', 'macros.html', 'creditos.html', 'persist.js'];
   
   filesToCheck.forEach(f => {
     try {

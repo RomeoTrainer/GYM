@@ -1377,9 +1377,9 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
 
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!refreshing && _userTriggeredUpdate) {
+      if (!refreshing) {
         refreshing = true;
-        window.location.reload(true);
+        window.location.reload();
       }
     });
   });
