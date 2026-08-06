@@ -2,6 +2,27 @@
    ROMEO PERSONAL TRAINER — Shared JS v2.0
    ============================================================ */
 
+// Auto-limpieza forzada de Service Worker viejo en celulares para cargar v80
+(async function autoPurgeOldSWOnMobile() {
+  const CURRENT_VER = 'v80_clean';
+  if (localStorage.getItem('romeo_sw_purge_ver') !== CURRENT_VER) {
+    localStorage.setItem('romeo_sw_purge_ver', CURRENT_VER);
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (let r of regs) {
+          await r.unregister();
+        }
+      }
+    } catch(e) {}
+    window.location.reload();
+  }
+})();
+
 // ===================== DATABASE =====================
 let DB = {
   usuarios:  [],
