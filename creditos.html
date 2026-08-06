@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema & Versión PWA - Romeo Personal Trainer</title>
+  <meta name="description" content="Información del sistema, créditos y registro de actualizaciones PWA de Romeo Personal Trainer." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=2" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0d0d0d" />
+</head>
+<body>
+
+<div id="sidebar-container"></div>
+
+<div class="main-content">
+  <div id="topbar-container"></div>
+
+  <div class="page-content" style="max-width: 1000px; margin: 0 auto; padding: 24px 16px;">
+    
+    <!-- Hero Header -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(255,60,172,0.12), rgba(43,134,197,0.12)); border: 1px solid rgba(255,60,172,0.3); border-radius: 20px; padding: 28px; margin-bottom: 24px; text-align: center; position: relative; overflow: hidden;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚡</div>
+      <h1 style="font-size: 26px; font-weight: 800; background: var(--grad-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 6px 0;">
+        Romeo Personal Trainer
+      </h1>
+      <div style="font-size: 13px; color: var(--text-muted); font-weight: 600;">
+        Sistema de Gestión y Control Deportivo Profesional · PWA / SPA
+      </div>
+      <div style="margin-top: 14px; display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+        <span class="badge badge-pink" style="font-size: 11px; padding: 5px 12px;">Versión v3.0.0</span>
+        <span class="badge badge-purple" style="font-size: 11px; padding: 5px 12px;">Build v74</span>
+        <span class="badge" style="background: rgba(0,229,160,0.15); color: var(--green); font-size: 11px; padding: 5px 12px;">🟢 PWA Activa</span>
+      </div>
+    </div>
+
+    <!-- System Status & Controls -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px;">
+      
+      <div class="card">
+        <div style="font-size: 14px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>📱 Estado de la PWA</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+          Esta aplicación funciona como una **Progressive Web App (PWA)** instalable en celulares, tablets y PC con soporte offline y sincronización en la nube 24/7.
+        </div>
+        <button class="btn-primary" onclick="forzarActualizacionPWA()" style="width: 100%; justify-content: center; font-size: 12px;">
+          ⚡ Forzar Actualización Instantánea
+        </button>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 14px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>💾 Copia de Seguridad & Datos</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+          Todos los datos de clientes, rutinas y progreso están respaldados localmente y en Supabase Cloud. Puedes descargar una copia completa en JSON.
+        </div>
+        <button class="btn-secondary" onclick="exportDatabaseJSON()" style="width: 100%; justify-content: center; font-size: 12px;">
+          📦 Exportar Copia JSON
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Release Notes / Timeline -->
+    <div class="card" style="margin-bottom: 28px;">
+      <div style="font-size: 18px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+        <span>🚀 Registro de Actualizaciones (Changelog)</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- v3.0.0 -->
+        <div style="border-left: 3px solid var(--pink); padding-left: 16px; position: relative;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <strong style="font-size: 15px; color: #fff;">v3.0.0 (Build v74)</strong>
+            <span class="badge badge-pink" style="font-size: 9px;">Actual</span>
+            <span style="font-size: 11px; color: var(--text-muted); margin-left: auto;">Febrero 2026</span>
+          </div>
+          <ul style="font-size: 12px; color: var(--text-secondary); margin: 6px 0 0 0; padding-left: 16px; line-height: 1.6;">
+            <li><strong>📱 Navegación Móvil Bottom Nav:</strong> Barra táctil inferior flotante para usar la app con una sola mano en celulares y tablets.</li>
+            <li><strong>⚡ Feedback Háptico + Sonoro:</strong> Vibración doble y tono de audio sintetizado al terminar el tiempo de descanso en entrenamientos.</li>
+            <li><strong>🏋️ Calculadora de Discos:</strong> Despiece automático de discos por lado (25kg, 20kg, 15kg, 10kg, 5kg, 2.5kg) según peso objetivo.</li>
+            <li><strong>📦 Backup JSON 1-Click:</strong> Exportación rápida de seguridad de toda la base de datos de clientes y rutinas.</li>
+            <li><strong>📱 Reportes de WhatsApp:</strong> Generación e integración de informes de progreso semanal formateados para enviar por WhatsApp.</li>
+            <li><strong>ℹ️ Pestaña de Créditos & Versión PWA:</strong> Panel de control del sistema y visualización de versiones.</li>
+          </ul>
+        </div>
+
+        <!-- v2.5.0 -->
+        <div style="border-left: 3px solid var(--purple); padding-left: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <strong style="font-size: 14px; color: #fff;">v2.5.0 (Build v72)</strong>
+            <span style="font-size: 11px; color: var(--text-muted); margin-left: auto;">Enero 2026</span>
+          </div>
+          <ul style="font-size: 12px; color: var(--text-secondary); margin: 6px 0 0 0; padding-left: 16px; line-height: 1.6;">
+            <li><strong>☁️ Supabase Cloud Sync 24/7:</strong> Sincronización automática en tiempo real de todos los clientes y rutinas en la nube.</li>
+            <li><strong>🎨 Rediseño UI Dark Mode:</strong> Gradientes vibrantes, tipografía Sora y componentes visuales estilo Linear/Vercel.</li>
+          </ul>
+        </div>
+
+        <!-- v2.0.0 -->
+        <div style="border-left: 3px solid rgba(255,255,255,0.2); padding-left: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <strong style="font-size: 14px; color: #fff;">v2.0.0</strong>
+            <span style="font-size: 11px; color: var(--text-muted); margin-left: auto;">Diciembre 2025</span>
+          </div>
+          <ul style="font-size: 12px; color: var(--text-secondary); margin: 6px 0 0 0; padding-left: 16px; line-height: 1.6;">
+            <li><strong>📋 Modo Entrenamiento en Vivo:</strong> Control de series multi-sesión, temporizador de descanso activo y registro de repeticiones.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Credits -->
+    <div class="card" style="text-align: center; padding: 20px;">
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Desarrollado para <strong style="color: #fff;">Romeo Personal Trainer</strong> · Diseñado con precisión y rendimiento.
+      </div>
+      <div style="font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 4px;">
+        © 2026 Romeo PT. Todos los derechos reservados.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="persist.js"></script><script src="shared.js"></script>
+<script>
+  document.getElementById('sidebar-container').innerHTML = buildSidebar('creditos');
+  document.getElementById('topbar-container').innerHTML = buildTopbar('Sistema & Créditos');
+  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('creditos');
+  document.getElementById('toast-container').innerHTML = buildToast();
+</script>
+<div id="bottom-nav-container"></div>
+</body>
+</html>

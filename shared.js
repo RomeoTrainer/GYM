@@ -479,10 +479,11 @@ function buildSidebar(activePage) {
     { id:'dashboard',     href:'index.html',          label:'Dashboard',    icon:`<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>` },
     { id:'usuarios',      href:'usuarios.html',        label:'Clientes',     icon:`<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>` },
     { id:'rutinas',       href:'rutinas.html',         label:'Rutinas',      icon:`<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>` },
-    { id:'entrenamiento', href:'entrenamiento.html',   label:'Entrenamiento',icon:`<polyline points="13 2 13 9 20 9"/><path d="M20 9L13 2"/><path d="M4 4h7"/><path d="M4 8h5"/><path d="M4 12h9"/><path d="M4 16h16"/><path d="M4 20h16"/>` },
+    { id:'entrenamiento', href:'entrenamiento.html',   label:'Entrenamiento',icon:`<polyline points="13 2 13 9 20 9"/><path d="M20 9L13 2"/><path d="M4 16h16"/>` },
     { id:'progreso',      href:'progreso.html',        label:'Progreso',     icon:`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>` },
-    { id:'recetas',       href:'recetas.html',         label:'Nutrición',    icon:`<path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10h-10V2z" opacity=".5"/>` },
+    { id:'recetas',       href:'recetas.html',         label:'Nutrición',    icon:`<path d="M12 2a10 10 0 1 0 10 10H12V2z"/>` },
     { id:'macros',        href:'macros.html',          label:'Macros',       icon:`<circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10H12z"/>` },
+    { id:'creditos',      href:'creditos.html',        label:'Acerca de',    icon:`<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>` },
   ];
 
   const badges = {
@@ -564,7 +565,7 @@ function buildBottomNav(activePage = 'dashboard') {
     { id:'rutinas',       href:'rutinas.html',         label:'Rutinas',      icon:`<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>` },
     { id:'entrenamiento', href:'entrenamiento.html',   label:'Entrenar',     icon:`<polyline points="13 2 13 9 20 9"/><path d="M20 9L13 2"/><path d="M4 16h16"/>` },
     { id:'progreso',      href:'progreso.html',        label:'Progreso',     icon:`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>` },
-    { id:'recetas',       href:'recetas.html',         label:'Nutrición',    icon:`<path d="M12 2a10 10 0 1 0 10 10H12V2z"/>` },
+    { id:'creditos',      href:'creditos.html',        label:'Sistema',      icon:`<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>` },
   ];
 
   return `
