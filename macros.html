@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Romeo Personal Trainer — Macronutrientes</title>
+  <meta name="description" content="Calculadora de macronutrientes y déficit o superávit calórico personalizado." />  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#00E5A0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Romeo PT" />
+  <link rel="apple-touch-icon" href="1.jpeg" />
+  <style>
+    /* ── Donut Chart ── */
+    .donut-wrap { display:flex; flex-direction:column; align-items:center; gap:10px; padding:12px 0; }
+    .donut-svg { overflow:visible; }
+    .donut-center-text { font-family:'Sora',sans-serif; }
+
+    /* ── Meal Distribution ── */
+    .meal-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; }
+    .meal-card { background:var(--bg-input); border:1px solid var(--border); border-radius:10px; padding:12px; }
+    .meal-card-title { font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+    .meal-card-cal { font-size:20px; font-weight:800; color:var(--text-primary); }
+    .meal-card-macros { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+    .meal-macro-pill { font-size:10px; font-weight:600; padding:2px 7px; border-radius:20px; }
+    .meal-macro-pill.p { background:rgba(0,229,160,.15); color:#00e5a0; }
+    .meal-macro-pill.f { background:rgba(255,112,67,.15); color:#ff7043; }
+    .meal-macro-pill.c { background:rgba(43,134,197,.15); color:#2b86c5; }
+    .meal-pct-slider { width:100%; margin-top:6px; accent-color:var(--pink); }
+
+    /* ── Diet Label ── */
+    .diet-label-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; }
+
+    /* ── Cycling ── */
+    .cycling-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:14px; }
+    .cycling-card { background:var(--bg-input); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center; }
+    .cycling-card .c-val { font-size:26px; font-weight:800; }
+    .cycling-card .c-lbl { font-size:11px; color:var(--text-muted); margin-top:4px; }
+    .cycling-card.train { border-color:rgba(0,229,160,.3); }
+    .cycling-card.rest { border-color:rgba(255,60,172,.3); }
+
+    /* ── Water KPI ── */
+    .water-kpi { display:flex; align-items:center; gap:10px; background:rgba(43,134,197,.1); border:1px solid rgba(43,134,197,.25); border-radius:10px; padding:12px 16px; margin:0 14px 14px; }
+    .water-kpi .w-icon { font-size:22px; }
+    .water-kpi .w-info .w-val { font-size:18px; font-weight:800; color:#2b86c5; }
+    .water-kpi .w-info .w-lbl { font-size:11px; color:var(--text-muted); }
+
+    /* ── Print card ── */
+    .print-macro-card { display:none; }
+    @media print {
+      .sidebar, .topbar, .toolbar, .print-hide { display:none !important; }
+      .main-content { margin-left:0 !important; }
+      .print-macro-card { display:block !important; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width:600px) {
+      .meal-grid, .cycling-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="sidebar-container"></div>
+<main class="main-content">
+  <div id="topbar-container"></div>
+  <div class="page-body">
+
+    <div class="section-header">
+      <h1>Calculadora de Macros</h1>
+      <p class="section-subtitle">Calcula y personaliza las calorías y distribución de nutrientes de cada cliente</p>
+    </div>
+
+    <div class="toolbar print-hide">
+      <div class="select-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <select id="sel-usuario" onchange="onUsuarioChange()">
+          <option value="">— Seleccionar Cliente —</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="btn-guardar" onclick="guardarPlan()" disabled>
+        💾 Guardar Plan
+      </button>
+      <button class="btn-secondary print-hide" id="btn-whatsapp" onclick="compartirWhatsapp()" disabled style="color:#25D366;border-color:rgba(37,211,102,0.3);display:flex;align-items:center;gap:7px;">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg>
+        WhatsApp
+      </button>
+      <button class="btn-secondary print-hide" onclick="window.print()" id="btn-print" disabled style="display:flex;align-items:center;gap:7px;">
+        🖨️ Imprimir / PDF
+      </button>
+    </div>
+
+    <!-- Client Info Banner -->
+    <div class="client-info-banner" id="client-banner" style="display:none">
+      <div class="client-info-item"><div class="client-info-val" id="cb-genero">—</div><div class="client-info-lbl">Género</div></div>
+      <div class="client-info-item"><div class="client-info-val" id="cb-edad">—</div><div class="client-info-lbl">Edad</div></div>
+      <div class="client-info-item"><div class="client-info-val" id="cb-peso">—</div><div class="client-info-lbl">Peso Actual</div></div>
+      <div class="client-info-item"><div class="client-info-val" id="cb-estatura">—</div><div class="client-info-lbl">Estatura</div></div>
+      <div class="client-info-item"><div class="client-info-val" id="cb-objetivo">—</div><div class="client-info-lbl">Objetivo</div></div>
+      <div class="client-info-item"><div class="client-info-val" id="cb-diet-label" style="font-size:12px;">—</div><div class="client-info-lbl">Tipo de Dieta</div></div>
+    </div>
+
+    <div id="macros-container">
+      <div class="empty-state">
+        <span class="empty-icon">🍳</span>
+        <h3>Selecciona un cliente</h3>
+        <p>Elige un cliente para cargar sus datos metabólicos y configurar su plan nutricional</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast-container"></div>
+<script src="persist.js"></script><script src="shared.js"></script>
+<script>
+  document.getElementById('sidebar-container').innerHTML = buildSidebar('macros');
+  document.getElementById('topbar-container').innerHTML = buildTopbar('Macronutrientes');
+  document.getElementById('toast-container').innerHTML = buildToast();
+
+  const sel = document.getElementById('sel-usuario');
+  
+  function populateUsuarioSelect() {
+    if (!sel) return;
+    var currentVal = sel.value;
+    sel.innerHTML = '<option value="">— Seleccionar Cliente —</option>';
+    
+    if (DB && DB.usuarios) {
+      DB.usuarios.forEach(function(u) {
+        var o = document.createElement('option');
+        o.value = u.id; o.textContent = u.nombre; sel.appendChild(o);
+      });
+    }
+    
+    var param = new URLSearchParams(window.location.search).get('usuario');
+    var activeUser = typeof getActiveUser === 'function' ? getActiveUser() : null;
+    
+    if (currentVal && DB.usuarios && DB.usuarios.some(function(u){ return u.id === currentVal; })) {
+      sel.value = currentVal;
+    } else if (param && DB.usuarios && DB.usuarios.some(function(u){ return u.id === param; })) {
+      sel.value = param;
+    } else if (activeUser && DB.usuarios && DB.usuarios.some(function(u){ return u.id === activeUser.id; })) {
+      sel.value = activeUser.id;
+    } else if (DB.usuarios && DB.usuarios.length > 0) {
+      sel.value = DB.usuarios[0].id;
+    }
+    
+    onUsuarioChange();
+  }
+
+  populateUsuarioSelect();
+
+  window.addEventListener('romeo_db_loaded', function() {
+    populateUsuarioSelect();
+  });
+
+  var currentClient = null;
+
+  // Default meal percentages
+  var mealPcts = { desayuno: 25, almuerzo: 35, merienda: 10, cena: 30 };
+
+  function onUsuarioChange() {
+    var uid = sel.value;
+    document.getElementById('btn-guardar').disabled = !uid;
+    document.getElementById('btn-whatsapp').disabled = !uid;
+    document.getElementById('btn-print').disabled = !uid;
+    var banner = document.getElementById('client-banner');
+    if (!uid) {
+      banner.style.display = 'none';
+      currentClient = null;
+      document.getElementById('macros-container').innerHTML = '<div class="empty-state"><span class="empty-icon">🍳</span><h3>Selecciona un cliente</h3><p>Elige un cliente para cargar sus datos metabólicos y configurar su plan nutricional</p></div>';
+      return;
+    }
+    currentClient = DB.usuarios.find(function(x){ return x.id === uid; });
+    var progresos = DB.progresos.filter(function(p){ return p.usuarioId === uid; }).sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
+    currentClient.pesoActual = (progresos[0] && progresos[0].peso) || currentClient.peso;
+
+    document.getElementById('cb-genero').textContent = currentClient.genero || '—';
+    document.getElementById('cb-edad').textContent = (currentClient.edad || '—') + ' años';
+    document.getElementById('cb-peso').textContent = (currentClient.pesoActual || '—') + ' kg';
+    document.getElementById('cb-estatura').textContent = (currentClient.estatura || '—') + ' cm';
+    document.getElementById('cb-objetivo').textContent = currentClient.objetivo || '—';
+    banner.style.display = 'flex';
+    renderCalculadora();
+  }
+
+  function renderCalculadora() {
+    var container = document.getElementById('macros-container');
+    var u = currentClient;
+    var m = u.macros || {};
+    var defAct = m.actividadFactor || 1.375;
+    var defAjuste = m.ajusteCal !== undefined ? m.ajusteCal : (u.objetivo === 'Ganar músculo' ? 400 : (u.objetivo === 'Perder peso' ? -400 : 0));
+    var defProt = m.proteinaFactor || 2.2;
+    var defGrasa = m.grasaPct || 25;
+    var defCycling = m.cyclingExtra || 200;
+
+    container.innerHTML =
+      '<div class="macro-input-grid">' +
+
+      // LEFT: Config
+      '<div class="card">' +
+        '<div class="card-header"><h2>⚙️ Configuración del Plan</h2></div>' +
+        '<div style="padding:16px;display:flex;flex-direction:column;gap:16px;">' +
+
+          '<div class="form-group" style="padding:0">' +
+            '<label>Nivel de Actividad Física</label>' +
+            '<select id="m-actividad" onchange="calcular()">' +
+              '<option value="1.2" ' + (defAct==1.2?'selected':'') + '>Poco o ningún ejercicio (×1.2)</option>' +
+              '<option value="1.375" ' + (defAct==1.375?'selected':'') + '>Ejercicio ligero 1-3 días/sem (×1.375)</option>' +
+              '<option value="1.55" ' + (defAct==1.55?'selected':'') + '>Ejercicio moderado 3-5 días/sem (×1.55)</option>' +
+              '<option value="1.725" ' + (defAct==1.725?'selected':'') + '>Ejercicio intenso 6-7 días/sem (×1.725)</option>' +
+            '</select>' +
+          '</div>' +
+
+          '<div class="macro-slider-group">' +
+            '<div class="macro-slider-header"><span>Ajuste Calórico</span>' +
+              '<span class="macro-slider-val" id="v-ajuste">' + (defAjuste>0?'+':'') + defAjuste + ' kcal</span></div>' +
+            '<input type="range" class="macro-slider" id="m-ajuste" min="-600" max="600" step="50" value="' + defAjuste + '" oninput="updateSliderVal(\'ajuste\')" />' +
+            '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)">' +
+              '<span>Definición (-600)</span><span>Mantenimiento (0)</span><span>Volumen (+600)</span></div>' +
+          '</div>' +
+
+          '<div class="macro-slider-group">' +
+            '<div class="macro-slider-header"><span>Factor de Proteínas</span>' +
+              '<span class="macro-slider-val" id="v-proteina">' + defProt.toFixed(1) + ' g/kg</span></div>' +
+            '<input type="range" class="macro-slider" id="m-proteina" min="1.6" max="2.8" step="0.1" value="' + defProt + '" oninput="updateSliderVal(\'proteina\')" />' +
+            '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)">' +
+              '<span>Normal (1.6)</span><span>Óptimo (2.2)</span><span>Alto (2.8)</span></div>' +
+          '</div>' +
+
+          '<div class="macro-slider-group">' +
+            '<div class="macro-slider-header"><span>Porcentaje de Grasas</span>' +
+              '<span class="macro-slider-val" id="v-grasa">' + defGrasa + '%</span></div>' +
+            '<input type="range" class="macro-slider" id="m-grasa" min="15" max="35" step="1" value="' + defGrasa + '" oninput="updateSliderVal(\'grasa\')" />' +
+            '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)">' +
+              '<span>Mínimo (15%)</span><span>Saludable (25%)</span><span>Máximo (35%)</span></div>' +
+          '</div>' +
+
+          '<div class="macro-slider-group">' +
+            '<div class="macro-slider-header"><span>⚡ Cycling Calórico (extra días entreno)</span>' +
+              '<span class="macro-slider-val" id="v-cycling">+' + defCycling + ' kcal</span></div>' +
+            '<input type="range" class="macro-slider" id="m-cycling" min="0" max="500" step="50" value="' + defCycling + '" oninput="updateSliderVal(\'cycling\')" />' +
+            '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)">' +
+              '<span>Sin cycling</span><span>+250 kcal</span><span>+500 kcal</span></div>' +
+          '</div>' +
+
+        '</div>' +
+      '</div>' +
+
+      // RIGHT: Results
+      '<div style="display:flex;flex-direction:column;gap:16px;">' +
+
+        // KPIs: TMB / Mant / Objetivo
+        '<div class="macro-results-grid">' +
+          '<div class="macro-res-card tmb"><div class="macro-res-val" id="res-tmb">0</div><div class="macro-res-lbl">TMB (Basal)</div></div>' +
+          '<div class="macro-res-card maint"><div class="macro-res-val" id="res-mantenimiento">0</div><div class="macro-res-lbl">Mantenimiento</div></div>' +
+          '<div class="macro-res-card target"><div class="macro-res-val" id="res-calorias" style="background:var(--grad-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">0</div><div class="macro-res-lbl">Calorías Objetivo</div></div>' +
+        '</div>' +
+
+        // Water + Diet Label
+        '<div class="card">' +
+          '<div class="water-kpi">' +
+            '<div class="w-icon">💧</div>' +
+            '<div class="w-info">' +
+              '<div class="w-val" id="res-agua">— L / día</div>' +
+              '<div class="w-lbl">Agua diaria recomendada (35 ml × kg peso)</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="padding:0 14px 14px;display:flex;align-items:center;gap:8px;">' +
+            '<span style="font-size:12px;color:var(--text-muted)">Tipo de Dieta:</span>' +
+            '<span id="res-diet-label" class="diet-label-badge" style="background:rgba(255,60,172,.15);color:#FF3CAC;">—</span>' +
+          '</div>' +
+        '</div>' +
+
+        // Donut Chart + Legend
+        '<div class="card">' +
+          '<div class="card-header"><h2>🥧 Distribución de Macros</h2></div>' +
+          '<div class="donut-wrap">' +
+            '<svg id="donut-svg" class="donut-svg" width="180" height="180" viewBox="0 0 180 180">' +
+              '<circle cx="90" cy="90" r="70" fill="none" stroke="var(--bg-input)" stroke-width="28"/>' +
+              '<circle id="donut-prot" cx="90" cy="90" r="70" fill="none" stroke="#00E5A0" stroke-width="28" stroke-dasharray="0 440" stroke-dashoffset="0" transform="rotate(-90 90 90)" style="transition:stroke-dasharray .5s"/>' +
+              '<circle id="donut-fat" cx="90" cy="90" r="70" fill="none" stroke="#FF7043" stroke-width="28" stroke-dasharray="0 440" stroke-dashoffset="0" transform="rotate(-90 90 90)" style="transition:stroke-dasharray .5s"/>' +
+              '<circle id="donut-carb" cx="90" cy="90" r="70" fill="none" stroke="#2B86C5" stroke-width="28" stroke-dasharray="0 440" stroke-dashoffset="0" transform="rotate(-90 90 90)" style="transition:stroke-dasharray .5s"/>' +
+              '<text id="donut-cal-text" x="90" y="85" text-anchor="middle" font-family="Sora" font-size="18" font-weight="800" fill="white">0</text>' +
+              '<text x="90" y="103" text-anchor="middle" font-family="Sora" font-size="10" fill="#777">kcal/día</text>' +
+            '</svg>' +
+            '<div class="macro-legend">' +
+              '<div class="macro-legend-item"><div class="macro-legend-dot prot"></div><span>Proteínas (<span id="pct-prot">0</span>%) — <span id="res-prot-g">0g</span></span></div>' +
+              '<div class="macro-legend-item"><div class="macro-legend-dot fat"></div><span>Grasas (<span id="pct-fat">0</span>%) — <span id="res-fat-g">0g</span></span></div>' +
+              '<div class="macro-legend-item"><div class="macro-legend-dot carb"></div><span>Carbohidratos (<span id="pct-carb">0</span>%) — <span id="res-carb-g">0g</span></span></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // Macro breakdown cards
+        '<div class="macro-breakdown-grid">' +
+          '<div class="macro-item-card prot">' +
+            '<div class="macro-item-title">🍗 Proteínas</div>' +
+            '<div class="macro-item-val" id="res-prot-g2">0g</div>' +
+            '<div class="macro-item-kcal" id="res-prot-kcal">0 kcal</div>' +
+          '</div>' +
+          '<div class="macro-item-card fat">' +
+            '<div class="macro-item-title">🥑 Grasas</div>' +
+            '<div class="macro-item-val" id="res-fat-g2">0g</div>' +
+            '<div class="macro-item-kcal" id="res-fat-kcal">0 kcal</div>' +
+          '</div>' +
+          '<div class="macro-item-card carb">' +
+            '<div class="macro-item-title">🥣 Carbohidratos</div>' +
+            '<div class="macro-item-val" id="res-carb-g2">0g</div>' +
+            '<div class="macro-item-kcal" id="res-carb-kcal">0 kcal</div>' +
+          '</div>' +
+        '</div>' +
+
+      '</div>' + // end right col
+      '</div>' + // end grid
+
+      // CYCLING SECTION
+      '<div class="card" style="margin-top:16px">' +
+        '<div class="card-header"><h2>⚡ Cycling Calórico</h2></div>' +
+        '<div class="cycling-grid">' +
+          '<div class="cycling-card train">' +
+            '<div style="font-size:20px;margin-bottom:4px">🏋️</div>' +
+            '<div class="c-val" id="cyc-train" style="color:#00E5A0">0</div>' +
+            '<div class="c-lbl">kcal — Días de Entrenamiento</div>' +
+          '</div>' +
+          '<div class="cycling-card rest">' +
+            '<div style="font-size:20px;margin-bottom:4px">😴</div>' +
+            '<div class="c-val" id="cyc-rest" style="color:#FF3CAC">0</div>' +
+            '<div class="c-lbl">kcal — Días de Descanso</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      // MEAL DISTRIBUTION
+      '<div class="card" style="margin-top:16px">' +
+        '<div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<h2>🍽️ Distribución por Comidas</h2>' +
+          '<span id="meal-total-pct" style="font-size:11px;color:var(--text-muted)">Total: 100%</span>' +
+        '</div>' +
+        '<div class="meal-grid">' +
+          buildMealCard('desayuno','☀️','Desayuno',25) +
+          buildMealCard('almuerzo','🍱','Almuerzo',35) +
+          buildMealCard('merienda','🍎','Merienda',10) +
+          buildMealCard('cena','🌙','Cena',30) +
+        '</div>' +
+      '</div>';
+
+    calcular();
+  }
+
+  function buildMealCard(id, icon, name, defaultPct) {
+    return '<div class="meal-card">' +
+      '<div class="meal-card-title">' + icon + ' ' + name + ' <span id="meal-pct-lbl-' + id + '" style="margin-left:auto;color:var(--pink);font-size:11px">' + defaultPct + '%</span></div>' +
+      '<div class="meal-card-cal" id="meal-cal-' + id + '">— kcal</div>' +
+      '<div class="meal-card-macros">' +
+        '<span class="meal-macro-pill p" id="meal-p-' + id + '">P: —g</span>' +
+        '<span class="meal-macro-pill f" id="meal-f-' + id + '">G: —g</span>' +
+        '<span class="meal-macro-pill c" id="meal-c-' + id + '">C: —g</span>' +
+      '</div>' +
+      '<input type="range" class="meal-pct-slider" id="meal-slider-' + id + '" min="5" max="60" step="5" value="' + defaultPct + '" oninput="onMealSlider(\'' + id + '\')" />' +
+    '</div>';
+  }
+
+  function onMealSlider(id) {
+    var val = parseInt(document.getElementById('meal-slider-' + id).value);
+    mealPcts[id] = val;
+    document.getElementById('meal-pct-lbl-' + id).textContent = val + '%';
+    var total = Object.values(mealPcts).reduce(function(a,b){return a+b;},0);
+    var totalEl = document.getElementById('meal-total-pct');
+    totalEl.textContent = 'Total: ' + total + '%';
+    totalEl.style.color = total === 100 ? 'var(--green)' : 'var(--orange)';
+    updateMealCards();
+  }
+
+  function updateSliderVal(type) {
+    var val = document.getElementById('m-' + type).value;
+    var disp = document.getElementById('v-' + type);
+    if (type === 'ajuste') disp.textContent = (val > 0 ? '+' : '') + val + ' kcal';
+    else if (type === 'proteina') disp.textContent = parseFloat(val).toFixed(1) + ' g/kg';
+    else if (type === 'grasa') disp.textContent = val + '%';
+    else if (type === 'cycling') disp.textContent = '+' + val + ' kcal';
+    calcular();
+  }
+
+  // Store last calculated values for meal cards & whatsapp
+  var lastCalc = {};
+
+  function calcular() {
+    if (!currentClient) return;
+    var u = currentClient;
+    var peso = u.pesoActual;
+    var est = u.estatura;
+    var edad = u.edad;
+    var gen = u.genero;
+
+    // TMB Mifflin-St Jeor
+    var tmb = 0;
+    if (gen === 'Masculino') tmb = (10*peso)+(6.25*est)-(5*edad)+5;
+    else if (gen === 'Femenino') tmb = (10*peso)+(6.25*est)-(5*edad)-161;
+    else tmb = (10*peso)+(6.25*est)-(5*edad)-80;
+    tmb = Math.round(tmb);
+
+    var actFactor = parseFloat(document.getElementById('m-actividad').value);
+    var maint = Math.round(tmb * actFactor);
+    var ajuste = parseInt(document.getElementById('m-ajuste').value);
+    var targetCal = maint + ajuste;
+
+    // Macros
+    var protFactor = parseFloat(document.getElementById('m-proteina').value);
+    var protG = Math.round(peso * protFactor);
+    var protKcal = protG * 4;
+
+    var fatPct = parseInt(document.getElementById('m-grasa').value) / 100;
+    var fatKcal = Math.round(targetCal * fatPct);
+    var fatG = Math.round(fatKcal / 9);
+
+    var carbKcal = targetCal - (protKcal + fatKcal);
+    if (carbKcal < 0) carbKcal = 0;
+    var carbG = Math.round(carbKcal / 4);
+
+    var totalKcal = protKcal + fatKcal + carbKcal;
+    var pctProt = Math.round((protKcal / (totalKcal || 1)) * 100);
+    var pctFat  = Math.round((fatKcal  / (totalKcal || 1)) * 100);
+    var pctCarb = 100 - pctProt - pctFat;
+
+    // Cycling
+    var cyclingExtra = parseInt(document.getElementById('m-cycling').value);
+    var cycTrain = targetCal + cyclingExtra;
+    var cycRest = targetCal - cyclingExtra;
+
+    // Water
+    var agua = ((peso * 35) / 1000).toFixed(1);
+
+    // Diet label
+    var dietLabel = getDietLabel(protFactor, parseInt(document.getElementById('m-grasa').value), carbKcal, targetCal);
+
+    // Store
+    lastCalc = { tmb:tmb, maint:maint, targetCal:targetCal, protG:protG, protKcal:protKcal, fatG:fatG, fatKcal:fatKcal, carbG:carbG, carbKcal:carbKcal, pctProt:pctProt, pctFat:pctFat, pctCarb:pctCarb, cycTrain:cycTrain, cycRest:cycRest, agua:agua, dietLabel:dietLabel, actFactor:actFactor, ajuste:ajuste, protFactor:protFactor, fatPct:parseInt(document.getElementById('m-grasa').value), cyclingExtra:cyclingExtra };
+
+    // Update DOM
+    document.getElementById('res-tmb').textContent = tmb;
+    document.getElementById('res-mantenimiento').textContent = maint;
+    document.getElementById('res-calorias').textContent = targetCal;
+
+    document.getElementById('res-prot-g').textContent = protG + 'g';
+    document.getElementById('res-prot-g2').textContent = protG + 'g';
+    document.getElementById('res-prot-kcal').textContent = protKcal + ' kcal';
+    document.getElementById('res-fat-g').textContent = fatG + 'g';
+    document.getElementById('res-fat-g2').textContent = fatG + 'g';
+    document.getElementById('res-fat-kcal').textContent = fatKcal + ' kcal';
+    document.getElementById('res-carb-g').textContent = carbG + 'g';
+    document.getElementById('res-carb-g2').textContent = carbG + 'g';
+    document.getElementById('res-carb-kcal').textContent = carbKcal + ' kcal';
+
+    document.getElementById('pct-prot').textContent = pctProt;
+    document.getElementById('pct-fat').textContent = pctFat;
+    document.getElementById('pct-carb').textContent = pctCarb;
+
+    document.getElementById('res-agua').textContent = agua + ' L / día';
+    document.getElementById('res-diet-label').textContent = dietLabel.emoji + ' ' + dietLabel.name;
+    document.getElementById('res-diet-label').style.background = dietLabel.bg;
+    document.getElementById('res-diet-label').style.color = dietLabel.color;
+    document.getElementById('cb-diet-label').textContent = dietLabel.emoji + ' ' + dietLabel.name;
+
+    document.getElementById('cyc-train').textContent = cycTrain;
+    document.getElementById('cyc-rest').textContent = cycRest > 0 ? cycRest : targetCal;
+
+    // Update donut
+    updateDonut(pctProt, pctFat, pctCarb, targetCal);
+
+    // Update meal cards
+    updateMealCards();
+  }
+
+  function updateDonut(pProt, pFat, pCarb, total) {
+    var circ = 2 * Math.PI * 70; // 439.8
+    var offset = 0;
+
+    function setArc(id, pct, color) {
+      var el = document.getElementById(id);
+      var dash = (pct / 100) * circ;
+      el.setAttribute('stroke', color);
+      el.setAttribute('stroke-dasharray', dash + ' ' + circ);
+      el.setAttribute('stroke-dashoffset', -offset);
+      offset += dash;
+    }
+
+    setArc('donut-prot', pProt, '#00E5A0');
+    setArc('donut-fat',  pFat,  '#FF7043');
+    setArc('donut-carb', pCarb, '#2B86C5');
+
+    document.getElementById('donut-cal-text').textContent = total;
+  }
+
+  function updateMealCards() {
+    if (!lastCalc.targetCal) return;
+    var meals = ['desayuno','almuerzo','merienda','cena'];
+    meals.forEach(function(id) {
+      var pct = mealPcts[id] / 100;
+      var cal = Math.round(lastCalc.targetCal * pct);
+      var p = Math.round(lastCalc.protG * pct);
+      var f = Math.round(lastCalc.fatG * pct);
+      var c = Math.round(lastCalc.carbG * pct);
+      document.getElementById('meal-cal-' + id).textContent = cal + ' kcal';
+      document.getElementById('meal-p-' + id).textContent = 'P: ' + p + 'g';
+      document.getElementById('meal-f-' + id).textContent = 'G: ' + f + 'g';
+      document.getElementById('meal-c-' + id).textContent = 'C: ' + c + 'g';
+    });
+  }
+
+  function getDietLabel(protFactor, fatPct, carbKcal, totalKcal) {
+    var carbPct = (carbKcal / (totalKcal||1)) * 100;
+    if (fatPct >= 60 || carbPct < 10) return {name:'Cetogénica (Keto)', emoji:'🔥', bg:'rgba(255,112,67,.15)', color:'#FF7043'};
+    if (fatPct >= 40 || carbPct < 20) return {name:'Baja en Carbos', emoji:'⬇️', bg:'rgba(255,192,0,.15)', color:'#ffc000'};
+    if (protFactor >= 2.5) return {name:'Alta en Proteína', emoji:'💪', bg:'rgba(0,229,160,.15)', color:'#00E5A0'};
+    if (totalKcal > 0 && parseInt(document.getElementById('m-ajuste').value) >= 200) return {name:'Volumen / Bulk', emoji:'📈', bg:'rgba(255,60,172,.15)', color:'#FF3CAC'};
+    if (parseInt(document.getElementById('m-ajuste').value) <= -200) return {name:'Definición / Cut', emoji:'📉', bg:'rgba(43,134,197,.15)', color:'#2B86C5'};
+    return {name:'Dieta Estándar', emoji:'✅', bg:'rgba(255,255,255,.08)', color:'var(--text-secondary)'};
+  }
+
+  async function guardarPlan() {
+    if (!currentClient) return;
+    var uid = currentClient.id;
+    var idx = DB.usuarios.findIndex(function(x){ return x.id===uid; });
+    if (idx < 0) return;
+
+    var actSel = document.getElementById('m-actividad');
+    DB.usuarios[idx].macros = {
+      tmb: lastCalc.tmb,
+      mantenimiento: lastCalc.maint,
+      calorias: lastCalc.targetCal,
+      proteinasG: lastCalc.protG,
+      proteinasKcal: lastCalc.protKcal,
+      grasasG: lastCalc.fatG,
+      grasasKcal: lastCalc.fatKcal,
+      carbohidratosG: lastCalc.carbG,
+      carbohidratosKcal: lastCalc.carbKcal,
+      actividadFactor: lastCalc.actFactor,
+      actividadLabel: actSel.options[actSel.selectedIndex].text.split(':')[0],
+      ajusteCal: lastCalc.ajuste,
+      proteinaFactor: lastCalc.protFactor,
+      grasaPct: lastCalc.fatPct,
+      cyclingExtra: lastCalc.cyclingExtra,
+      mealPcts: JSON.parse(JSON.stringify(mealPcts)),
+      agua: lastCalc.agua,
+      tipoDieta: lastCalc.dietLabel.name
+    };
+    await saveDB();
+    var activeUser = getActiveUser();
+    if (activeUser && activeUser.id === uid) {
+      actualizarMacrosUsuarioActivo(lastCalc.targetCal, lastCalc.protG, lastCalc.carbG, lastCalc.fatG);
+    } else {
+      showToast('💾 Plan nutricional guardado exitosamente');
+    }
+  }
+
+  function compartirWhatsapp() {
+    if (!currentClient || !lastCalc.targetCal) { showToast('Calcula primero el plan', 'error'); return; }
+    var u = currentClient;
+    var lc = lastCalc;
+    var actSel = document.getElementById('m-actividad');
+    var actLabel = actSel.options[actSel.selectedIndex].text.split('(')[0].trim();
+    var msg =
+      '*🍽️ Plan Nutricional — ' + u.nombre + '*\n' +
+      '━━━━━━━━━━━━━━\n' +
+      '📌 Objetivo: ' + (u.objetivo||'—') + '\n' +
+      '🏃 Actividad: ' + actLabel + '\n' +
+      '🏷️ Tipo de dieta: ' + lc.dietLabel.emoji + ' ' + lc.dietLabel.name + '\n\n' +
+      '*⚡ Calorías*\n' +
+      '  TMB (Basal): ' + lc.tmb + ' kcal\n' +
+      '  Mantenimiento: ' + lc.maint + ' kcal\n' +
+      '  *🎯 Objetivo: ' + lc.targetCal + ' kcal/día*\n\n' +
+      '*🥩 Macronutrientes*\n' +
+      '  🍗 Proteínas: *' + lc.protG + 'g* (' + lc.protKcal + ' kcal)\n' +
+      '  🥑 Grasas: *' + lc.fatG + 'g* (' + lc.fatKcal + ' kcal)\n' +
+      '  🥣 Carbohidratos: *' + lc.carbG + 'g* (' + lc.carbKcal + ' kcal)\n\n' +
+      '*⚡ Cycling Calórico*\n' +
+      '  🏋️ Días entreno: ' + lc.cycTrain + ' kcal\n' +
+      '  😴 Días descanso: ' + (lc.cycRest > 0 ? lc.cycRest : lc.targetCal) + ' kcal\n\n' +
+      '💧 Agua diaria: *' + lc.agua + ' L*\n' +
+      '━━━━━━━━━━━━━━\n' +
+      '👨‍🏫 Romeo Personal Trainer';
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  }
+</script>
+</body>
+</html>

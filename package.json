@@ -1,0 +1,12 @@
+{
+  "name": "romeo-personal-trainer",
+  "version": "1.0.0",
+  "description": "App para control de rutinas y progreso - Romeo Personal Trainer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

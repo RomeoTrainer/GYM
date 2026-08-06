@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Romeo Personal Trainer — Entrenamiento en Vivo</title>
+  <meta name="description" content="Modo entrenamiento activo: temporizador de descanso, registro de series y sonido de fin de descanso." />
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#00E5A0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Romeo PT" />
+  <link rel="apple-touch-icon" href="1.jpeg" />
+  <style>
+    .timer-display { font-size: 52px; font-weight: 800; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .rest-banner { display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:#1c1c1c; border:1px solid rgba(255,60,172,0.4); border-radius:var(--r); padding:14px 28px; z-index:500; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.7); animation:fadeUp .3s ease; }
+    .rest-countdown { font-size:36px; font-weight:800; background:var(--grad-main); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .session-complete { text-align:center; padding:48px 20px; }
+    .session-complete-icon { font-size:80px; animation:bounce .8s infinite alternate; margin-bottom:16px; }
+    @keyframes bounce { to { transform: translateY(-12px); } }
+    .session-complete h2 { font-size:28px; font-weight:800; background:var(--grad-main); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:10px; }
+    .btn-input-adj {
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: var(--r-xs);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .btn-input-adj:hover:not(:disabled) {
+      border-color: var(--pink);
+      color: var(--pink);
+      background: rgba(255, 60, 172, 0.05);
+    }
+    .btn-input-adj:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<div id="sidebar-container"></div>
+<main class="main-content">
+  <div id="topbar-container"></div>
+  <div class="page-body">
+
+    <!-- Motivational Quote -->
+    <div class="motivational-banner" id="motivational">
+      <div class="motivational-icon">🔥</div>
+      <div>
+        <div class="motivational-quote" id="quote-text"></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="quote-author"></div>
+      </div>
+    </div>
+
+    <!-- Active Sessions Tabs Bar -->
+    <div id="active-sessions-bar-container" style="display:none; margin-bottom: 24px;">
+      <div class="active-sessions-bar" id="active-sessions-bar"></div>
+    </div>
+
+    <!-- Session Setup (shown when no session active) -->
+    <div id="setup-section">
+      <div class="toolbar">
+        <div class="select-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          <select id="sel-usuario" onchange="onUsuarioChange()">
+            <option value="">— Seleccionar Cliente —</option>
+          </select>
+        </div>
+        <div class="select-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <select id="sel-rutina">
+            <option value="">— Seleccionar Rutina —</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="btn-iniciar" onclick="iniciarSesion()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Iniciar Sesión
+        </button>
+      </div>
+      <div id="preview-rutina">
+        <div class="empty-state">
+          <span class="empty-icon">💪</span>
+          <h3>Selecciona un cliente y una rutina</h3>
+          <p>Una vez seleccionados, inicia la sesión para activar el modo de entrenamiento</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Session (shown when training) -->
+    <div id="session-section" style="display:none">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div>
+          <div class="section-header" style="margin-bottom:0"><h1 id="session-title">Sesión Activa</h1></div>
+          <div style="font-size:12px;color:var(--text-muted)" id="session-meta"></div>
+        </div>
+        <button class="btn-secondary" onclick="terminarSesion()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          Terminar Sesión
+        </button>
+      </div>
+
+      <!-- Session Metrics Bar -->
+      <div class="session-metrics-bar">
+        <div class="session-metric sm-time">
+          <div class="timer-display" id="timer-display">00:00</div>
+          <div class="sm-lbl">⏱ Tiempo</div>
+        </div>
+        <div class="session-metric sm-volume">
+          <div class="sm-val" id="meter-volume">0</div>
+          <div class="sm-lbl">🏋️ Volumen (kg)</div>
+        </div>
+        <div class="session-metric sm-kcal">
+          <div class="sm-val" id="meter-kcal">0</div>
+          <div class="sm-lbl">🔥 Calorías</div>
+        </div>
+        <div class="session-metric sm-pct">
+          <div class="sm-val" id="meter-pct">0%</div>
+          <div class="sm-lbl">✅ Completado</div>
+        </div>
+      </div>
+
+      <!-- Overall Progress Ring -->
+      <div class="card" style="margin-bottom:20px;display:flex;align-items:center;gap:24px">
+        <div style="flex-shrink:0">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="url(#rgrad)" stroke-width="10"
+              id="progress-ring" stroke-dasharray="0 251.3" stroke-dashoffset="62.8" stroke-linecap="round"
+              style="transition:stroke-dasharray 0.5s ease"/>
+            <defs><linearGradient id="rgrad"><stop offset="0%" stop-color="#FF3CAC"/><stop offset="100%" stop-color="#2B86C5"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Progreso de la Sesión</div>
+          <div id="ring-label" style="font-size:22px;font-weight:800;background:var(--grad-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">0 / 0 sets</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Completa cada set para avanzar</div>
+        </div>
+      </div>
+
+      <!-- Exercises Checklist -->
+      <h3 style="font-size:14px;font-weight:700;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.8px">Lista de Ejercicios</h3>
+      <div class="checklist-section" id="checklist"></div>
+
+    </div>
+
+    <!-- Session History -->
+    <div style="margin-top:32px">
+      <div class="card-header" style="margin-bottom:14px">
+        <h2>📋 Historial de Sesiones</h2>
+        <span class="badge badge-pink" id="badge-sesiones">0</span>
+      </div>
+      <div id="sesiones-historial"></div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Rest Timer Banner -->
+<div class="rest-banner" id="rest-banner">
+  <div style="font-size:12px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">⏸ Descanso</div>
+  <div id="rest-client-name" style="font-size:11px;font-weight:800;color:var(--pink);margin-bottom:6px">Cliente</div>
+  <div class="rest-countdown" id="rest-countdown">60</div>
+  <div style="font-size:11px;color:var(--text-muted);margin-top:4px">segundos restantes</div>
+  <button class="btn-ghost" style="margin-top:8px;font-size:11px" onclick="cancelarDescanso()">Saltar descanso</button>
+</div>
+
+<div id="toast-container"></div>
+<script src="persist.js"></script><script src="shared.js"></script>
+<script>
+  // Constante para ordenamiento cronológico de meses en la sesión
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  document.getElementById('sidebar-container').innerHTML = buildSidebar('entrenamiento');
+  document.getElementById('topbar-container').innerHTML = buildTopbar('Entrenamiento en Vivo');
+  document.getElementById('toast-container').innerHTML = buildToast();
+
+  // Quotes
+  const q = getQuoteOfDay();
+  document.getElementById('quote-text').textContent = `"${q.text}"`;
+  document.getElementById('quote-author').textContent = `— ${q.author}`;
+
+  // Populate selects
+  const selU = document.getElementById('sel-usuario');
+  DB.usuarios.forEach(u => { const o = document.createElement('option'); o.value = u.id; o.textContent = u.nombre; selU.appendChild(o); });
+
+  // Auto from URL or Active User
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('usuario')) {
+    selU.value = params.get('usuario');
+    onUsuarioChange();
+  } else {
+    const activeUser = getActiveUser();
+    if (activeUser) {
+      selU.value = activeUser.id;
+      onUsuarioChange();
+    }
+  }
+  if (params.get('rutina')) {
+    const selR = document.getElementById('sel-rutina');
+    setTimeout(() => { selR.value = params.get('rutina'); previewRutina(); }, 50);
+  }
+
+  function onUsuarioChange() {
+    const uid = selU.value;
+    const selR = document.getElementById('sel-rutina');
+    selR.innerHTML = '<option value="">— Seleccionar Rutina —</option>';
+    if (!uid) { document.getElementById('btn-iniciar').disabled = true; previewVacio(); return; }
+    DB.rutinas.filter(r=>r.usuarioId===uid).forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.id; o.textContent = `${r.mes} ${r.anio} — ${r.tipo} (${r.ejercicios.length} ej.)`;
+      selR.appendChild(o);
+    });
+    selR.onchange = () => previewRutina();
+    previewVacio();
+  }
+
+  function previewVacio() {
+    document.getElementById('btn-iniciar').disabled = true;
+    document.getElementById('preview-rutina').innerHTML = `<div class="empty-state"><span class="empty-icon">💪</span><h3>Selecciona un cliente y una rutina</h3><p>Una vez seleccionados, inicia la sesión para activar el modo de entrenamiento</p></div>`;
+  }
+
+  function previewRutina() {
+    const rid = document.getElementById('sel-rutina').value;
+    const btn = document.getElementById('btn-iniciar');
+    if (!rid) { btn.disabled = true; previewVacio(); return; }
+    const r = DB.rutinas.find(x=>x.id===rid);
+    if (!r) { btn.disabled = true; return; }
+    btn.disabled = false;
+    document.getElementById('preview-rutina').innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h2>📋 Vista Previa — ${r.mes} ${r.anio}</h2>
+          <span class="badge badge-pink">${r.tipo}</span>
+        </div>
+        <table class="ejercicios-table">
+          <thead><tr><th>#</th><th>Ilustración</th><th>Ejercicio</th><th>Grupo</th><th>Series × Reps</th><th>Peso</th><th>Descanso</th></tr></thead>
+          <tbody>${r.ejercicios.map((ej,i)=>`<tr>
+            <td style="color:var(--text-muted)">${i+1}</td>
+            <td>
+              ${ej.imagen ? `<img src="${ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />` : '<span style="color:var(--text-muted); font-size:11px;">—</span>'}
+            </td>
+            <td><strong>${ej.nombre}</strong></td>
+            <td><span class="tag-muscular">${ej.grupo}</span></td>
+            <td>${ej.series||'—'}</td>
+            <td style="font-weight:800;color:var(--pink)">${ej.peso?ej.peso+' kg':'—'}</td>
+            <td>${ej.descanso?ej.descanso+'s':'—'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+        ${r.notes || r.notas?`<div class="rutina-notas" style="margin-top:12px">📝 ${r.notes || r.notas}</div>`:''}
+      </div>`;
+  }
+
+  // ======= MULTI-SESSION STATE =======
+  let activeSessions = {}; // key: usuarioId -> { usuarioId, rutinaId, timerSec, setsCompletados, setsTotal, volumenKg, setsState: { [sid]: { done, reps, peso } } }
+  let currentActiveUserId = null;
+  let globalTimerInterval = null;
+  let restInterval = null, restSec = 0;
+
+  function loadActiveSessions() {
+    try {
+      const s = localStorage.getItem('romeo_active_sessions');
+      if (s) {
+        const parsed = JSON.parse(s);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          activeSessions = parsed;
+        } else {
+          activeSessions = {};
+        }
+      }
+      currentActiveUserId = localStorage.getItem('romeo_current_active_user_id') || null;
+      if (currentActiveUserId && !activeSessions[currentActiveUserId]) {
+        const uids = Object.keys(activeSessions);
+        currentActiveUserId = uids.length > 0 ? uids[0] : null;
+      }
+    } catch(e) {
+      activeSessions = {};
+      currentActiveUserId = null;
+    }
+  }
+
+  function saveActiveSessions() {
+    try {
+      localStorage.setItem('romeo_active_sessions', JSON.stringify(activeSessions));
+      if (currentActiveUserId) {
+        localStorage.setItem('romeo_current_active_user_id', currentActiveUserId);
+      } else {
+        localStorage.removeItem('romeo_current_active_user_id');
+      }
+    } catch(e) {
+      console.warn('Error al guardar sesiones activas:', e);
+    }
+  }
+
+  let lastSaveTimestamp = Date.now();
+  function initMultiSessionTimer() {
+    if (globalTimerInterval) clearInterval(globalTimerInterval);
+    globalTimerInterval = setInterval(() => {
+      try {
+        const ahora = Date.now();
+        let updated = false;
+
+        for (let uid in activeSessions) {
+          const sesion = activeSessions[uid];
+          if (!sesion) continue;
+
+          if (!sesion.inicioTime) {
+            sesion.inicioTime = ahora - ((sesion.timerSec || 0) * 1000);
+          }
+          sesion.timerSec = Math.floor((ahora - sesion.inicioTime) / 1000);
+          updated = true;
+
+          // Check rest timer expiration for ALL active sessions in background
+          if (sesion.restEndTimestamp) {
+            if (ahora >= sesion.restEndTimestamp) {
+              delete sesion.restEndTimestamp;
+              saveActiveSessions();
+              const u = (DB.usuarios || []).find(x => x.id === uid);
+              const userName = u ? u.nombre.split(' ')[0] : 'Cliente';
+              emitirBipFinDescanso();
+              showToast(`⚡ ¡Fin del descanso de ${userName}! Siguiente serie.`, 'info');
+              
+              if (uid === currentActiveUserId) {
+                const restBanner = document.getElementById('rest-banner');
+                if (restBanner) restBanner.style.display = 'none';
+              }
+            }
+          }
+        }
+
+        if (updated) {
+          if (ahora - lastSaveTimestamp > 10000) {
+            saveActiveSessions();
+            lastSaveTimestamp = ahora;
+          }
+
+          // Update active tab timers & rest badges in top bar
+          for (let uid in activeSessions) {
+            const timerEl = document.getElementById(`tab-timer-${uid}`);
+            if (timerEl && activeSessions[uid]) {
+              const ses = activeSessions[uid];
+              const isRest = ses.restEndTimestamp && ses.restEndTimestamp > ahora;
+              if (isRest) {
+                const rem = Math.ceil((ses.restEndTimestamp - ahora) / 1000);
+                timerEl.textContent = `⏸ ${rem}s`;
+                timerEl.style.color = 'var(--yellow)';
+                timerEl.style.fontWeight = '800';
+              } else {
+                const m = Math.floor((ses.timerSec || 0)/60).toString().padStart(2,'0');
+                const s = ((ses.timerSec || 0)%60).toString().padStart(2,'0');
+                timerEl.textContent = `${m}:${s}`;
+                timerEl.style.color = '';
+                timerEl.style.fontWeight = '';
+              }
+            }
+          }
+
+          // Update active user display
+          if (currentActiveUserId && activeSessions[currentActiveUserId]) {
+            const s = activeSessions[currentActiveUserId];
+            const m = Math.floor((s.timerSec || 0)/60).toString().padStart(2,'0');
+            const sec = ((s.timerSec || 0)%60).toString().padStart(2,'0');
+            const displayEl = document.getElementById('timer-display');
+            if (displayEl) displayEl.textContent = `${m}:${sec}`;
+            
+            const kcalEl = document.getElementById('meter-kcal');
+            if (kcalEl) kcalEl.textContent = Math.round((s.timerSec || 0) / 60 * 7);
+
+            // Update active client rest banner
+            const restBanner = document.getElementById('rest-banner');
+            const restCountdown = document.getElementById('rest-countdown');
+            const restClientName = document.getElementById('rest-client-name');
+            const u = (DB.usuarios || []).find(x => x.id === currentActiveUserId);
+
+            if (s.restEndTimestamp && s.restEndTimestamp > ahora) {
+              const remSec = Math.ceil((s.restEndTimestamp - ahora) / 1000);
+              if (restBanner) restBanner.style.display = 'block';
+              if (restCountdown) restCountdown.textContent = remSec;
+              if (restClientName && u) restClientName.textContent = u.nombre;
+            } else {
+              if (restBanner && restBanner.style.display !== 'none') restBanner.style.display = 'none';
+            }
+          }
+        }
+      } catch(err) {
+        console.warn('[Timer Error]:', err);
+      }
+    }, 1000);
+  }
+
+  function renderActiveSessionsBar() {
+    const container = document.getElementById('active-sessions-bar-container');
+    const bar = document.getElementById('active-sessions-bar');
+    if (!container || !bar) return;
+    
+    const uids = Object.keys(activeSessions);
+    if (uids.length === 0) {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = '';
+    
+    const ahora = Date.now();
+    let html = uids.map(uid => {
+      const s = activeSessions[uid];
+      const u = DB.usuarios.find(x => x.id === uid);
+      const r = DB.rutinas.find(x => x.id === s.rutinaId);
+      const activeClass = (uid === currentActiveUserId) ? 'active' : '';
+      const avCl = u ? avatarClass(u.nombre) : 'av-0';
+      const ini = u ? initials(u.nombre) : '?';
+      const m = Math.floor(s.timerSec/60).toString().padStart(2,'0');
+      const sec = (s.timerSec%60).toString().padStart(2,'0');
+      const name = u ? u.nombre : 'Cliente eliminado';
+      const routineName = r ? r.tipo : 'Rutina';
+      const pct = s.setsTotal > 0 ? Math.round(s.setsCompletados / s.setsTotal * 100) : 0;
+      
+      const isRest = s.restEndTimestamp && s.restEndTimestamp > ahora;
+      const restRem = isRest ? Math.ceil((s.restEndTimestamp - ahora) / 1000) : 0;
+      const timerTxt = isRest ? `⏸ ${restRem}s` : `${m}:${sec}`;
+      const timerStyle = isRest ? `color:var(--yellow); font-weight:800;` : ``;
+
+      return `
+        <div class="live-session-tab ${activeClass}" onclick="switchActiveSession('${uid}')">
+          <div class="tab-avatar ${avCl}">${ini}</div>
+          <div class="tab-info">
+            <span class="tab-name">${name}</span>
+            <span class="tab-meta">
+              <span class="tab-routine">${routineName}</span> · 
+              <span class="tab-timer" id="tab-timer-${uid}" style="${timerStyle}">${timerTxt}</span> · 
+              <span class="tab-progress" id="tab-progress-${uid}">${s.setsCompletados}/${s.setsTotal} sets (${pct}%)</span>
+            </span>
+          </div>
+          <span class="tab-close" onclick="abandonarSesionActiva('${uid}', event)" title="Abandonar sesión">✕</span>
+        </div>
+      `;
+    }).join('');
+    
+    html += `
+      <div class="live-session-tab-add" onclick="switchActiveSession(null)">
+        <span>➕ Nueva Sesión</span>
+      </div>
+    `;
+    
+    bar.innerHTML = html;
+  }
+
+  function switchActiveSession(uid) {
+    if (currentActiveUserId && activeSessions[currentActiveUserId]) {
+      const s = activeSessions[currentActiveUserId];
+      if (s && s.setsState) {
+        for (let sid in s.setsState) {
+          const repsInput = document.getElementById('reps-' + sid);
+          const pesoInput = document.getElementById('peso-' + sid);
+          if (repsInput && !s.setsState[sid].done) s.setsState[sid].reps = parseInt(repsInput.value) || 0;
+          if (pesoInput && !s.setsState[sid].done) s.setsState[sid].peso = parseFloat(pesoInput.value) || 0;
+        }
+      }
+    }
+    
+    currentActiveUserId = uid;
+    saveActiveSessions();
+    renderActiveSessionsBar();
+    showCurrentActiveSessionView();
+  }
+
+  function showCurrentActiveSessionView() {
+    const setupSection = document.getElementById('setup-section');
+    const sessionSection = document.getElementById('session-section');
+    
+    if (!currentActiveUserId || !activeSessions[currentActiveUserId]) {
+      setupSection.style.display = '';
+      sessionSection.style.display = 'none';
+      currentActiveUserId = null;
+      saveActiveSessions();
+      onUsuarioChange();
+      return;
+    }
+    
+    setupSection.style.display = 'none';
+    sessionSection.style.display = '';
+    
+    const s = activeSessions[currentActiveUserId];
+    const u = DB.usuarios.find(x => x.id === s.usuarioId);
+    let r = DB.rutinas.find(x => x.id === s.rutinaId);
+    if (!r && s.usuarioId) {
+      r = DB.rutinas.find(x => x.usuarioId === s.usuarioId);
+      if (r) s.rutinaId = r.id;
+    }
+    
+    document.getElementById('session-title').textContent = r ? `${r.mes || ''} ${r.anio || ''} — ${r.tipo || 'Rutina'}`.trim() : 'Sesión Activa';
+    document.getElementById('session-meta').textContent = u ? `📍 ${u.nombre} · ${r && Array.isArray(r.ejercicios) ? r.ejercicios.length : 0} ejercicios` : '';
+    
+    const m = Math.floor((s.timerSec || 0)/60).toString().padStart(2,'0');
+    const sec = ((s.timerSec || 0)%60).toString().padStart(2,'0');
+    document.getElementById('timer-display').textContent = `${m}:${sec}`;
+    document.getElementById('meter-kcal').textContent = Math.round((s.timerSec || 0) / 60 * 7);
+    
+    if (r && Array.isArray(r.ejercicios) && r.ejercicios.length > 0) {
+      buildChecklist(r.ejercicios);
+      if (s.setsTotal > 0 && s.setsCompletados === s.setsTotal) {
+        mostrarCompletion();
+      }
+    } else {
+      document.getElementById('checklist').innerHTML = `<div class="empty-state-sm"><p>No hay ejercicios disponibles para esta sesión.</p></div>`;
+    }
+
+    // Sync floating rest banner specifically for this selected client
+    const restBanner = document.getElementById('rest-banner');
+    const restCountdown = document.getElementById('rest-countdown');
+    const restClientName = document.getElementById('rest-client-name');
+    const ahora = Date.now();
+    if (s.restEndTimestamp && s.restEndTimestamp > ahora) {
+      const remSec = Math.ceil((s.restEndTimestamp - ahora) / 1000);
+      if (restBanner) restBanner.style.display = 'block';
+      if (restCountdown) restCountdown.textContent = remSec;
+      if (restClientName && u) restClientName.textContent = u.nombre;
+    } else {
+      if (restBanner) restBanner.style.display = 'none';
+    }
+  }
+
+  function iniciarSesion() {
+    const rid = document.getElementById('sel-rutina').value;
+    const uid = selU.value;
+    if (!rid || !uid) return;
+    
+    const r = DB.rutinas.find(x => x.id === rid);
+    if (!r) return;
+    
+    if (activeSessions[uid]) {
+      showToast('⚠️ Este cliente ya tiene una sesión activa', 'error');
+      switchActiveSession(uid);
+      return;
+    }
+    
+    activeSessions[uid] = {
+      usuarioId: uid,
+      rutinaId: rid,
+      inicioTime: Date.now(),
+      timerSec: 0,
+      setsCompletados: 0,
+      setsTotal: 0,
+      volumenKg: 0,
+      setsState: {}
+    };
+    
+    currentActiveUserId = uid;
+    saveActiveSessions();
+    
+    renderActiveSessionsBar();
+    showCurrentActiveSessionView();
+    showToast('🏋️ ¡Sesión iniciada! ¡Dale con todo!', 'info');
+  }
+
+  function buildChecklist(ejercicios) {
+    const cl = document.getElementById('checklist');
+    const s = activeSessions[currentActiveUserId];
+    if (!s || !cl || !Array.isArray(ejercicios)) return;
+    
+    s.setsTotal = 0;
+    const items = [];
+    
+    ejercicios.forEach((ej, ei) => {
+      if (!ej) return;
+      const seriesStr = typeof ej.series === 'string' ? ej.series : '';
+      const seriesMatch = seriesStr.match(/(\d+)\s*[x×]\s*(\d+)/i);
+      const numSeries = seriesMatch ? parseInt(seriesMatch[1]) : (parseInt(ej.series) || 3);
+      const numReps = seriesMatch ? parseInt(seriesMatch[2]) : 10;
+      
+      let ultimoPeso = null;
+      try {
+        ultimoPeso = obtenerUltimoPesoEjercicio(ej.nombre, currentActiveUserId);
+      } catch(e) {
+        console.warn('Error al obtener último peso:', e);
+      }
+      const pesoDefault = (parseFloat(ej.peso) > 0) ? parseFloat(ej.peso) : (ultimoPeso || 0);
+
+      for (let ser = 1; ser <= numSeries; ser++) {
+        s.setsTotal++;
+        const sid = `set-${ei}-${ser}`;
+        
+        if (!s.setsState[sid]) {
+          s.setsState[sid] = {
+            done: false,
+            reps: numReps,
+            peso: pesoDefault
+          };
+        }
+        
+        const setVal = s.setsState[sid];
+        const doneClass = setVal.done ? 'done' : '';
+        const checkChar = setVal.done ? '✓' : '';
+        const disabledAttr = setVal.done ? 'disabled' : '';
+        const peso = setVal.peso;
+        const descanso = parseInt(ej.descanso) || 60;
+        
+        const ultimoPesoTxt = (ultimoPeso !== null && !isNaN(ultimoPeso)) ? ` &nbsp;·&nbsp; <span style="color:var(--yellow); font-weight:700;">⏱️ Último: ${ultimoPeso} kg</span>` : '';
+
+        items.push(`<div class="checklist-item ${doneClass}" id="${sid}">
+          <div class="check-box" id="cb-${sid}" onclick="toggleSet('${sid}', ${descanso})">${checkChar}</div>
+          ${ej.imagen ? `<img src="${ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--border); margin: 0 10px; flex-shrink: 0;" />` : ''}
+          <div class="check-info" onclick="toggleSet('${sid}', ${descanso})">
+            <div class="check-name">${ej.nombre || 'Ejercicio'} — Serie ${ser}/${numSeries}</div>
+            <div class="check-detail"><span class="tag-muscular" style="font-size:9px">${ej.grupo || 'General'}</span> &nbsp;·&nbsp; Descanso: ${descanso}s${ultimoPesoTxt}</div>
+          </div>
+          <div class="check-inputs" style="display:flex; align-items:center; gap:4px;">
+            <!-- Reps Control -->
+            <button type="button" class="btn-input-adj" onclick="ajustarInputChecklist('${sid}', 'reps', -1)" ${disabledAttr}>-</button>
+            <input type="number" id="reps-${sid}" value="${setVal.reps}" min="1" max="100" style="width:36px; text-align:center; padding: 2px;" onchange="onSetInputChange('${sid}')" onclick="event.stopPropagation()" ${disabledAttr} />
+            <button type="button" class="btn-input-adj" onclick="ajustarInputChecklist('${sid}', 'reps', 1)" ${disabledAttr}>+</button>
+            <span class="check-inputs-label" style="font-size:10px; margin-right:4px;">reps</span>
+
+            <!-- Peso Control -->
+            <button type="button" class="btn-input-adj" onclick="ajustarInputChecklist('${sid}', 'peso', -2.5)" ${disabledAttr}>-</button>
+            <input type="number" id="peso-${sid}" value="${peso}" min="0" max="500" step="0.5" style="width:44px; text-align:center; font-weight:800; color:var(--pink); padding: 2px;" onchange="onSetInputChange('${sid}')" onclick="event.stopPropagation()" ${disabledAttr} />
+            <button type="button" class="btn-input-adj" onclick="ajustarInputChecklist('${sid}', 'peso', 2.5)" ${disabledAttr}>+</button>
+            <span class="check-inputs-label" style="font-size:10px;">kg</span>
+          </div>
+        </div>`);
+      }
+    });
+    
+    cl.innerHTML = items.join('');
+    recalculateMetrics();
+  }
+
+  function toggleSet(sid, descanso) {
+    const s = activeSessions[currentActiveUserId];
+    if (!s) return;
+    
+    const item = document.getElementById(sid);
+    const cb = document.getElementById('cb-' + sid);
+    if (!item) return;
+    
+    const wasDone = item.classList.contains('done');
+    const repsInput = document.getElementById('reps-' + sid);
+    const pesoInput = document.getElementById('peso-' + sid);
+    
+    const reps = parseInt(repsInput?.value) || 0;
+    const peso = parseFloat(pesoInput?.value) || 0;
+    
+    if (!s.setsState[sid]) s.setsState[sid] = { done: false, reps: reps, peso: peso };
+    
+    if (!wasDone) {
+      item.classList.add('done');
+      cb.textContent = '✓';
+      s.setsState[sid].done = true;
+      s.setsState[sid].reps = reps;
+      s.setsState[sid].peso = peso;
+      
+      if (repsInput) repsInput.disabled = true;
+      if (pesoInput) pesoInput.disabled = true;
+      item.querySelectorAll('.btn-input-adj').forEach(btn => btn.disabled = true);
+      
+      showToast(`✅ Set completado!`, 'success');
+      
+      if (descanso > 0) iniciarDescanso(descanso);
+    } else {
+      item.classList.remove('done');
+      cb.textContent = '';
+      s.setsState[sid].done = false;
+      
+      if (repsInput) repsInput.disabled = false;
+      if (pesoInput) pesoInput.disabled = false;
+      item.querySelectorAll('.btn-input-adj').forEach(btn => btn.disabled = false);
+    }
+    
+    recalculateMetrics();
+    
+    if (s.setsCompletados === s.setsTotal && s.setsTotal > 0) {
+      setTimeout(() => mostrarCompletion(), 600);
+    }
+  }
+
+  function onSetInputChange(sid) {
+    const s = activeSessions[currentActiveUserId];
+    if (!s || !s.setsState[sid]) return;
+    const repsInput = document.getElementById('reps-' + sid);
+    const pesoInput = document.getElementById('peso-' + sid);
+    if (repsInput) s.setsState[sid].reps = parseInt(repsInput.value) || 0;
+    if (pesoInput) s.setsState[sid].peso = parseFloat(pesoInput.value) || 0;
+    
+    recalculateMetrics();
+  }
+
+  function recalculateMetrics() {
+    const s = activeSessions[currentActiveUserId];
+    if (!s) return;
+    
+    let compl = 0;
+    let vol = 0;
+    
+    for (let sid in s.setsState) {
+      const setVal = s.setsState[sid];
+      if (setVal && setVal.done) {
+        compl++;
+        vol += (setVal.reps || 0) * (setVal.peso || 0);
+      }
+    }
+    
+    s.setsCompletados = compl;
+    s.volumenKg = vol;
+    
+    saveActiveSessions();
+    
+    const progEl = document.getElementById(`tab-progress-${currentActiveUserId}`);
+    if (progEl) {
+      const pct = s.setsTotal > 0 ? Math.round(s.setsCompletados / s.setsTotal * 100) : 0;
+      progEl.textContent = `${s.setsCompletados}/${s.setsTotal} sets (${pct}%)`;
+    }
+    
+    const volEl = document.getElementById('meter-volume');
+    if (volEl) volEl.textContent = Math.round(s.volumenKg).toLocaleString('es-CO');
+    
+    const pct = s.setsTotal > 0 ? Math.round(s.setsCompletados / s.setsTotal * 100) : 0;
+    const pctEl = document.getElementById('meter-pct');
+    if (pctEl) pctEl.textContent = pct + '%';
+    
+    const circ = 251.3;
+    const pctRing = s.setsTotal > 0 ? s.setsCompletados / s.setsTotal : 0;
+    const dash = pctRing * circ;
+    const ringEl = document.getElementById('progress-ring');
+    if (ringEl) ringEl.setAttribute('stroke-dasharray', `${dash} ${circ}`);
+    const ringLbl = document.getElementById('ring-label');
+    if (ringLbl) ringLbl.textContent = `${s.setsCompletados} / ${s.setsTotal} sets`;
+  }
+
+  function iniciarDescanso(secs) {
+    const s = activeSessions[currentActiveUserId];
+    if (!s) return;
+    s.restEndTimestamp = Date.now() + (secs * 1000);
+    saveActiveSessions();
+    const u = (DB.usuarios || []).find(x => x.id === currentActiveUserId);
+    const banner = document.getElementById('rest-banner');
+    if (banner) banner.style.display = 'block';
+    const countdown = document.getElementById('rest-countdown');
+    if (countdown) countdown.textContent = secs;
+    const clientNameEl = document.getElementById('rest-client-name');
+    if (clientNameEl && u) clientNameEl.textContent = u.nombre;
+  }
+
+  function cancelarDescanso() {
+    const s = activeSessions[currentActiveUserId];
+    if (s && s.restEndTimestamp) {
+      delete s.restEndTimestamp;
+      saveActiveSessions();
+    }
+    const banner = document.getElementById('rest-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function mostrarCompletion() {
+    const s = activeSessions[currentActiveUserId];
+    if (!s) return;
+    const cl = document.getElementById('checklist');
+    const timeStr = document.getElementById('timer-display').textContent;
+    cl.innerHTML = `<div class="session-complete">
+      <div class="session-complete-icon">🏆</div>
+      <h2>¡Sesión Completada!</h2>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px">Felicitaciones! Has completado todos los ejercicios</p>
+      <div class="session-metrics-bar" style="max-width:500px;margin:0 auto 24px">
+        <div class="session-metric sm-time"><div class="sm-val" style="font-size:24px">${timeStr}</div><div class="sm-lbl">Tiempo total</div></div>
+        <div class="session-metric sm-volume"><div class="sm-val">${Math.round(s.volumenKg).toLocaleString('es-CO')}</div><div class="sm-lbl">kg Volumen</div></div>
+        <div class="session-metric sm-kcal"><div class="sm-val">${document.getElementById('meter-kcal').textContent}</div><div class="sm-lbl">Calorías</div></div>
+        <div class="session-metric sm-pct"><div class="sm-val">100%</div><div class="sm-lbl">Completado</div></div>
+      </div>
+      <button class="btn-primary" onclick="terminarSesion()">Finalizar y Guardar</button>
+    </div>`;
+  }
+
+  async function abandonarSesionActiva(uid, event) {
+    if (event) event.stopPropagation();
+    const ok = await confirmModal({
+      title: 'Descartar Entrenamiento',
+      message: '¿Estás seguro de abandonar y descartar esta sesión en vivo? Se perderá el progreso.',
+      confirmText: 'Sí, Descartar',
+      cancelText: 'Cancelar',
+      isDanger: true
+    });
+    if (!ok) return;
+    
+    delete activeSessions[uid];
+    
+    if (currentActiveUserId === uid) {
+      const remainingUids = Object.keys(activeSessions);
+      if (remainingUids.length > 0) {
+        currentActiveUserId = remainingUids[0];
+      } else {
+        currentActiveUserId = null;
+      }
+    }
+    
+    saveActiveSessions();
+    renderActiveSessionsBar();
+    showCurrentActiveSessionView();
+    showToast('🗑️ Sesión descartada', 'error');
+  }
+
+  async function terminarSesion() {
+    const ok = await confirmModal({
+      title: 'Finalizar Sesión',
+      message: '¿Estás seguro de finalizar y guardar este entrenamiento?',
+      confirmText: 'Sí, Finalizar',
+      cancelText: 'Continuar Entrenando'
+    });
+    if (!ok) return;
+    
+    const s = activeSessions[currentActiveUserId];
+    if (!s) return;
+    
+    cancelarDescanso();
+    const uid = s.usuarioId;
+    const rid = s.rutinaId;
+    const pct = s.setsTotal > 0 ? Math.round(s.setsCompletados / s.setsTotal * 100) : 0;
+    
+    if (uid) {
+      const r = DB.rutinas.find(x => x.id === rid);
+      const ejerciciosRealizados = [];
+      
+      if (r && r.ejercicios) {
+        r.ejercicios.forEach((ej, ei) => {
+          const series = [];
+          const seriesMatch = ej.series?.match(/(\d+)\s*[x×]\s*(\d+)/i);
+          const numSeries = seriesMatch ? parseInt(seriesMatch[1]) : 3;
+          
+          for (let ser = 1; ser <= numSeries; ser++) {
+            const sid = `set-${ei}-${ser}`;
+            const state = s.setsState[sid];
+            if (state) {
+              series.push({
+                set: ser,
+                reps: state.reps,
+                peso: state.peso,
+                completado: state.done
+              });
+            }
+          }
+          
+          ejerciciosRealizados.push({
+            nombre: ej.nombre,
+            grupo: ej.grupo,
+            series
+          });
+        });
+      }
+      
+      if (rid && r && r.ejercicios) {
+        ejerciciosRealizados.forEach(ejRealizado => {
+          const ejRutina = r.ejercicios.find(x => x.nombre.trim().toLowerCase() === ejRealizado.nombre.trim().toLowerCase());
+          if (ejRutina) {
+            const completedSets = ejRealizado.series.filter(setVal => setVal.completado && setVal.peso > 0);
+            if (completedSets.length > 0) {
+              const maxPeso = Math.max(...completedSets.map(setVal => setVal.peso));
+              ejRutina.peso = maxPeso.toString();
+            }
+          }
+        });
+        const rIndex = DB.rutinas.findIndex(x => x.id === rid);
+        if (rIndex >= 0) {
+          DB.rutinas[rIndex] = r;
+        }
+      }
+      
+      const sesion = {
+        id: genId(),
+        usuarioId: uid,
+        rutinaId: rid || null,
+        fecha: new Date().toISOString().split('T')[0],
+        hora: new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'}),
+        estado: 'completada',
+        duracionSeg: s.timerSec,
+        volumenKg: Math.round(s.volumenKg),
+        setsCompletados: s.setsCompletados,
+        setsTotal: s.setsTotal,
+        ejercicios: ejerciciosRealizados,
+        notas: ''
+      };
+      DB.sesiones.push(sesion);
+      await saveDB();
+    }
+    
+    delete activeSessions[currentActiveUserId];
+    const remainingUids = Object.keys(activeSessions);
+    if (remainingUids.length > 0) {
+      currentActiveUserId = remainingUids[0];
+    } else {
+      currentActiveUserId = null;
+    }
+    
+    saveActiveSessions();
+    renderActiveSessionsBar();
+    showCurrentActiveSessionView();
+    renderHistorial();
+    showToast('🏆 Sesión guardada en el historial', 'success');
+  }
+
+  // ======= HISTORIAL =======
+  function toggleSessionDetail(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isShowing = el.style.display !== 'none';
+    el.style.display = isShowing ? 'none' : 'block';
+  }
+
+  function renderSessionDetailHtml(s) {
+    if (!s || !Array.isArray(s.ejercicios) || s.ejercicios.length === 0) {
+      return `<div style="color:var(--text-muted); font-style:italic;">Detalle de ejercicios no disponible para esta sesión.</div>`;
+    }
+    return s.ejercicios.map(ej => {
+      if (!ej) return '';
+      const seriesList = Array.isArray(ej.series) ? ej.series : [];
+      const setsHtml = seriesList.map(set => {
+        if (!set) return '';
+        const complClass = set.completado ? 'completed' : '';
+        const complCheck = set.completado ? '✓ ' : '✗ ';
+        return `<span class="session-detail-set-badge ${complClass}">${complCheck}S${set.set || 1}: ${set.reps || 0}x${set.peso || 0}kg</span>`;
+      }).join('');
+      return `<div class="session-detail-exercise">
+        <div class="session-detail-exercise-name">${ej.nombre || 'Ejercicio'} <span class="tag-muscular" style="font-size:8px; padding:1px 5px;">${ej.grupo || 'General'}</span></div>
+        <div class="session-detail-sets-list">${setsHtml}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderHistorial() {
+    const sesionesArr = Array.isArray(DB.sesiones) ? DB.sesiones : [];
+    const hist = sesionesArr.slice().sort((a,b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 20);
+    const badgeEl = document.getElementById('badge-sesiones');
+    if (badgeEl) badgeEl.textContent = sesionesArr.length;
+    const el = document.getElementById('sesiones-historial');
+    if (!el) return;
+    if (!hist.length) { el.innerHTML = `<div class="empty-state-sm"><p>Sin sesiones registradas aún.</p></div>`; return; }
+    el.innerHTML = hist.map(s => {
+      const u = (DB.usuarios || []).find(x=>x.id===s.usuarioId);
+      const r = (DB.rutinas || []).find(x=>x.id===s.rutinaId);
+      const avClass = u ? avatarClass(u.nombre) : 'av-0';
+      const ini = u ? initials(u.nombre) : '?';
+      const estadoBadge = { pendiente:'badge-blue', completada:'badge-green', cancelada:'badge-orange' }[s.estado] || 'badge-blue';
+      const durMin = s.duracionSeg ? Math.floor(s.duracionSeg/60) + 'min' : '—';
+      return `<div class="session-item-container" style="margin-bottom:8px;">
+        <div class="session-item" style="cursor:pointer;" onclick="toggleSessionDetail('sd-${s.id}')">
+          <div class="user-avatar-lg ${avClass}" style="width:36px;height:36px;font-size:13px;flex-shrink:0">${ini}</div>
+          <div class="session-info">
+            <div class="session-name">${u?.nombre||'Cliente eliminado'} ${r?`— ${r.mes||''} ${r.anio||''}`:''}</div>
+            <div class="session-meta">📅 ${formatDate(s.fecha || '')} ${s.hora || ''} &nbsp;·&nbsp; ⏱ ${durMin} &nbsp;·&nbsp; 🏋️ ${s.volumenKg||0}kg &nbsp;·&nbsp; ✅ ${s.setsCompletados||0}/${s.setsTotal||0} sets</div>
+          </div>
+          <span class="badge ${estadoBadge}">${s.estado || 'completada'}</span>
+          ${s.estado === 'pendiente' ? `<button class="btn-ghost" onclick="event.stopPropagation();reanudarSesion('${s.id}')" title="Reanudar entrenamiento" style="padding:5px 8px; margin-right:4px;">🔁</button>` : ''}
+          <button class="btn-ghost btn-danger" onclick="event.stopPropagation();eliminarSesionHistorial('${s.id}')" title="Eliminar" style="padding:5px 8px">🗑️</button>
+        </div>
+        <div class="session-detail-expanded" id="sd-${s.id}" style="display:none;">
+          ${renderSessionDetailHtml(s)}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function eliminarSesionHistorial(id) {
+    if (!confirm('¿Eliminar esta sesión del historial?')) return;
+    DB.sesiones = DB.sesiones.filter(s=>s.id!==id);
+    await saveDB(); renderHistorial(); showToast('🗑️ Sesión eliminada', 'error');
+  }
+
+  async function reanudarSesion(sesionId) {
+    const sesion = DB.sesiones.find(x => x.id === sesionId);
+    if (!sesion) return;
+    
+    const uid = sesion.usuarioId;
+    if (activeSessions[uid]) {
+      if (!confirm('⚠️ Este cliente ya tiene una sesión activa en este momento. ¿Deseas descartar esa sesión activa y reanudar esta sesión del historial?')) {
+        return;
+      }
+    }
+    
+    // Reconstruir setsState a partir de los datos históricos
+    const setsState = {};
+    if (sesion.ejercicios) {
+      sesion.ejercicios.forEach((ej, ei) => {
+        if (ej.series) {
+          ej.series.forEach(set => {
+            const sid = `set-${ei}-${set.set}`;
+            setsState[sid] = {
+              done: set.completado,
+              reps: set.reps,
+              peso: set.peso
+            };
+          });
+        }
+      });
+    }
+    
+    // Reactivar la sesión cargando el progreso acumulado y el timer
+    activeSessions[uid] = {
+      usuarioId: uid,
+      rutinaId: sesion.rutinaId,
+      inicioTime: Date.now() - (sesion.duracionSeg * 1000),
+      timerSec: sesion.duracionSeg,
+      setsCompletados: sesion.setsCompletados,
+      setsTotal: sesion.setsTotal,
+      volumenKg: sesion.volumenKg,
+      setsState: setsState
+    };
+    
+    // Remover del historial para evitar duplicar el registro al finalizarla de nuevo
+    DB.sesiones = DB.sesiones.filter(x => x.id !== sesionId);
+    await saveDB();
+    
+    currentActiveUserId = uid;
+    saveActiveSessions();
+    
+    renderActiveSessionsBar();
+    showCurrentActiveSessionView();
+    renderHistorial();
+    showToast('🏋️ Sesión reanudada. ¡Continúa entrenando!', 'info');
+  }
+
+  function obtenerUltimoPesoEjercicio(nombreEj, usuarioId) {
+    if (!usuarioId || !nombreEj || typeof nombreEj !== 'string') return null;
+    const norm = nombreEj.trim().toLowerCase();
+
+    // 1. Search in completed sessions
+    const completedSessions = (DB.sesiones || []).filter(s => s && s.usuarioId === usuarioId && s.estado === 'completada' && Array.isArray(s.ejercicios));
+    completedSessions.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+    for (const s of completedSessions) {
+      const match = s.ejercicios.find(e => e && typeof e.nombre === 'string' && e.nombre.trim().toLowerCase() === norm);
+      if (match) {
+        if (Array.isArray(match.series)) {
+          const weights = match.series.filter(set => set && set.completado && set.peso !== undefined && set.peso !== null).map(set => parseFloat(set.peso)).filter(p => !isNaN(p));
+          if (weights.length > 0) {
+            return Math.max(...weights);
+          }
+        }
+      }
+    }
+
+    // 2. Fallback to routines
+    const routines = (DB.rutinas || []).filter(r => r && r.usuarioId === usuarioId && Array.isArray(r.ejercicios));
+    routines.sort((a, b) => (parseInt(b.anio)||0) - (parseInt(a.anio)||0) || MESES.indexOf(b.mes) - MESES.indexOf(a.mes));
+
+    for (const r of routines) {
+      const match = r.ejercicios.find(e => e && typeof e.nombre === 'string' && e.nombre.trim().toLowerCase() === norm);
+      if (match && match.peso) {
+        const p = parseFloat(match.peso);
+        if (!isNaN(p)) return p;
+      }
+    }
+
+    return null;
+  }
+
+  function ajustarInputChecklist(sid, campo, delta) {
+    const input = document.getElementById(`${campo}-${sid}`);
+    if (!input || input.disabled) return;
+    
+    let val = parseFloat(input.value) || 0;
+    val = Math.max(0, val + delta);
+    
+    input.value = campo === 'peso' ? parseFloat(val.toFixed(1)) : Math.round(val);
+    onSetInputChange(sid);
+  }
+
+  function emitirBipFinDescanso() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      function playTone(freq, duration, delay) {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        }, delay);
+      }
+      
+      playTone(880, 0.15, 0);
+      playTone(1046.5, 0.20, 200);
+    } catch (e) {
+      console.warn("AudioContext no está soportado o fue bloqueado:", e);
+    }
+  }
+
+  renderHistorial();
+  loadActiveSessions();
+  initMultiSessionTimer();
+  renderActiveSessionsBar();
+  showCurrentActiveSessionView();
+
+  // Escuchar cambios de base de datos desde otras pestañas para actualizar la UI
+  window.addEventListener('romeo_db_loaded', () => {
+    renderHistorial();
+    renderActiveSessionsBar();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "Romeo Personal Trainer",
+  "short_name": "Romeo PT",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#00E5A0",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "1.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "1.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

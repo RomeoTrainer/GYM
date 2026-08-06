@@ -1,0 +1,2365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Romeo Personal Trainer — Creador de Rutinas</title>
+  <meta name="description" content="Diseña rutinas de entrenamiento por bloques: series, repeticiones, peso y tiempo de descanso." />  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#00E5A0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Romeo PT" />
+  <link rel="apple-touch-icon" href="1.jpeg" />
+</head>
+<body>
+
+<div id="sidebar-container"></div>
+<main class="main-content">
+  <div id="topbar-container"></div>
+  <div class="page-body">
+
+    <div class="section-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
+      <div>
+        <h1>Creador de Rutinas</h1>
+        <p class="section-subtitle">Diseña planes de entrenamiento o crea Packs (plantillas)</p>
+      </div>
+      <div class="view-tabs" style="display:flex; gap:10px; background:rgba(255,255,255,0.05); padding:4px; border-radius:8px;">
+        <button id="tab-clientes" class="btn-primary" style="padding:6px 12px; font-size:13px; min-width:140px;" onclick="switchTab('clientes')">Rutinas de Cliente</button>
+        <button id="tab-packs" class="btn-secondary" style="padding:6px 12px; font-size:13px; min-width:140px;" onclick="switchTab('packs')">Packs (Plantillas)</button>
+      </div>
+    </div>
+
+    <!-- VISTA CLIENTES -->
+    <div id="view-clientes">
+
+    <!-- Selector de usuario -->
+    <div class="toolbar">
+      <div class="select-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <select id="select-usuario" onchange="onUsuarioChange()">
+          <option value="">— Seleccionar Cliente —</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="btn-nueva-rutina" onclick="abrirEditor()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva Rutina
+      </button>
+      <button class="btn-secondary" id="btn-copiar-rutinas-cliente" onclick="copiarRutinasClienteModal()" disabled style="display:flex; align-items:center; gap:6px;">
+        📋 Copiar Rutinas a Otro Cliente
+      </button>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="toolbar" id="rutinas-filters-bar" style="display:none; gap:10px; margin-top:-10px; margin-bottom:18px; border-top:1px solid var(--border); padding-top:14px; justify-content:flex-start; flex-wrap:wrap; align-items:center;">
+      <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-right:4px;">Filtrar por:</span>
+      <div class="select-box" style="max-width:160px">
+        <select id="filter-r-mes" onchange="renderRutinas(document.getElementById('select-usuario').value)">
+          <option value="">Todos los meses</option>
+          <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+          <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+          <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+        </select>
+      </div>
+      <div class="select-box" style="max-width:130px">
+        <select id="filter-r-anio" onchange="renderRutinas(document.getElementById('select-usuario').value)">
+          <option value="">Todos los años</option>
+          <option>2024</option><option>2025</option><option>2026</option><option>2027</option>
+        </select>
+      </div>
+      <div class="select-box" style="max-width:160px">
+        <select id="filter-r-tipo" onchange="renderRutinas(document.getElementById('select-usuario').value)">
+          <option value="">Todos los tipos</option>
+          <option value="Fuerza">Fuerza</option>
+          <option value="Hipertrofia">Hipertrofia</option>
+          <option value="Pérdida de Peso">Pérdida de Peso</option>
+          <option value="Resistencia">Resistencia</option>
+          <option value="Funcional">Funcional</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="rutinas-container">
+      <div class="empty-state">
+        <span class="empty-icon">🏋️</span>
+        <h3>Selecciona un cliente</h3>
+        <p>Elige un cliente para ver o crear sus rutinas mensuales</p>
+      </div>
+    </div>
+    </div>
+    <!-- /VISTA CLIENTES -->
+
+    <!-- VISTA PACKS -->
+    <div id="view-packs" style="display:none;">
+      <div class="toolbar" style="justify-content:flex-end;">
+        <button class="btn-primary" onclick="crearNuevoPack()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo Pack
+        </button>
+      </div>
+      <div id="packs-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
+        <!-- Packs will be rendered here -->
+      </div>
+    </div>
+    <!-- /VISTA PACKS -->
+  </div>
+</main>
+<!-- =================== EDITOR MODAL =================== -->
+<div class="modal-overlay" id="modal-editor">
+  <div class="modal modal-lg" style="max-width:900px">
+    <div class="modal-header">
+      <h2 id="editor-title">Nueva Rutina</h2>
+      <button class="modal-close" onclick="closeModal('modal-editor')">✕</button>
+    </div>
+    <form id="form-rutina" onsubmit="guardarRutina(event)">
+      <input type="hidden" id="r-id" />
+
+      <!-- Acciones Rápidas -->
+      <div style="margin: 16px 24px 0; background: rgba(255,255,255,0.03); border: 1px dashed var(--border); padding: 12px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+        <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Acciones Rápidas:</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 250px; justify-content: flex-end;">
+          <select id="r-importar-select" onchange="importarEjerciciosDeRutina(this.value)" style="font-size: 11px; padding: 6px 10px; border-radius: var(--r-xs); background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-primary); max-width: 280px; width: 100%; cursor: pointer;">
+            <!-- Filled dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Config general -->
+      <div class="routine-config" style="margin:16px 24px 0">
+        <div class="form-group" id="group-r-cliente">
+          <label>Cliente Asignado</label>
+          <select id="r-usuario-id"></select>
+        </div>
+        <div class="form-group">
+          <label>Nombre de la Rutina</label>
+          <input type="text" id="r-nombre" placeholder="Ej. Programa de Fuerza — Mes 1" />
+        </div>
+        <div class="form-group">
+          <label>Mes</label>
+          <select id="r-mes">
+            <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+            <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+            <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Año</label>
+          <input type="number" id="r-anio" value="2025" min="2020" max="2035" />
+        </div>
+        <div class="form-group">
+          <label>Tipo de Rutina</label>
+          <select id="r-tipo">
+            <option value="Fuerza">Fuerza</option>
+            <option value="Hipertrofia">Hipertrofia</option>
+            <option value="Pérdida de Peso">Pérdida de Peso</option>
+            <option value="Resistencia">Resistencia</option>
+            <option value="Funcional">Funcional</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Grupo Muscular Objetivo</label>
+          <select id="r-grupo">
+            <option>Cuerpo Completo</option><option>Pecho + Tríceps</option><option>Espalda + Bíceps</option>
+            <option>Pierna + Glúteos</option><option>Hombros + Core</option><option>Cardio + Metabolismo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Días por Semana</label>
+          <select id="r-dias"><option value="3">3 días</option><option value="4">4 días</option><option value="5">5 días</option><option value="6">6 días</option></select>
+        </div>
+        <div class="form-group">
+          <label>Peso Inicial del Mes (kg)</label>
+          <input type="number" id="r-peso-ini" step="0.1" placeholder="70.5" />
+        </div>
+        <div class="form-group">
+          <label>Peso Final del Mes (kg)</label>
+          <input type="number" id="r-peso-fin" step="0.1" placeholder="68.0" />
+        </div>
+        <div class="form-group">
+          <label>Biblioteca de Ejercicios</label>
+          <button type="button" class="btn-primary" style="background:var(--grad-main); display:flex; align-items:center; justify-content:center; gap:8px; padding:10px;" onclick="abrirBibliotecaVisual()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Biblioteca Visual
+          </button>
+        </div>
+      </div>
+
+      <!-- Block editor -->
+      <div style="padding:0 24px 8px">
+        <div class="form-section-title" style="margin-top:4px">Ejercicios de la Rutina</div>
+        <!-- Column headers -->
+        <div class="block-header-grid">
+          <span></span><span>Ejercicio</span><span>Grupo Musc.</span><span>Imagen</span><span>Series × Reps</span><span>Peso (kg)</span><span>Descanso (seg)</span><span>Notas</span><span></span>
+        </div>
+        <div id="blocks-container"></div>
+        <button type="button" class="btn-add-block" onclick="agregarBloque()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar Ejercicio
+        </button>
+      </div>
+
+      <!-- Notas generales -->
+      <div style="padding:0 24px 8px">
+        <div class="form-section-title">Recomendaciones del Entrenador</div>
+        <div class="form-group">
+          <textarea id="r-notas" rows="3" placeholder="Indicaciones especiales, ajustes de dieta, progresión de cargas, tips de técnica..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-editor')">Cancelar</button>
+        <button type="button" class="btn-secondary" onclick="limpiarBloques()">🗑️ Limpiar</button>
+        <button type="submit" class="btn-primary" id="btn-guardar-rutina">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span id="btn-guardar-rutina-text">Guardar Rutina</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =================== VISUAL LIBRARY MODAL =================== -->
+<div class="modal-overlay" id="modal-biblioteca-visual" style="z-index: 2000;">
+  <div class="modal modal-lg" style="max-width: 950px; height: 85vh; display: flex; flex-direction: column; background: #1a1a1a;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <h2>Biblioteca Visual de Ejercicios</h2>
+      <button class="modal-close" onclick="closeModal('modal-biblioteca-visual')">✕</button>
+    </div>
+    
+    <div style="flex:1; display:flex; min-height:0; overflow:hidden;">
+      <!-- Categories sidebar (left) -->
+      <div style="width:180px; border-right:1px solid var(--border); overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.15);" id="lib-groups">
+        <!-- populated dynamically -->
+      </div>
+      
+      <!-- Grid explorer (right) -->
+      <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap: 16px; flex-shrink:0;">
+          <h3 id="lib-current-category" style="font-size:16px; font-weight:800; color:var(--pink); margin:0;">Pecho</h3>
+          <input type="text" id="lib-search-input" placeholder="🔍 Buscar ejercicio..." oninput="filtrarEjerciciosBiblioteca()" style="width:250px; padding:6px 12px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:white; outline:none;" />
+          <button type="button" class="btn-primary" onclick="abrirModalNuevoEjercicio()" style="padding:6px 12px; font-size:12px; display:flex; align-items:center; gap:6px; background:var(--grad-main); border:none; height: 32px;"><span style="font-size:14px; font-weight:700;">+</span> Nuevo Ejercicio</button>
+          <span style="font-size:11px; color:var(--text-muted); margin-left:auto;">Haz clic en un ejercicio para agregarlo directamente a tu rutina</span>
+        </div>
+        
+        <div class="library-grid" id="lib-exercises-grid">
+          <!-- populated dynamically -->
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer" style="flex-shrink:0; border-top: 1px solid var(--border); margin-top:0; padding:14px 24px;">
+      <button type="button" class="btn-secondary" onclick="closeModal('modal-biblioteca-visual')">Cerrar Biblioteca</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== NEW EXERCISE MODAL =================== -->
+<div class="modal-overlay" id="modal-nuevo-ejercicio" style="z-index: 2100;">
+  <div class="modal" style="max-width: 450px;">
+    <div class="modal-header">
+      <h2>Crear Nuevo Ejercicio</h2>
+      <button class="modal-close" onclick="closeModal('modal-nuevo-ejercicio')">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px; display:flex; justify-content:space-between; align-items:center;">
+          <span>Grupo Muscular</span>
+          <a href="#" onclick="abrirCrearGrupoMuscular(); return false;" style="color:var(--pink); text-decoration:none; text-transform:none; font-weight:600; font-size:11px;">+ Crear Grupo</a>
+        </label>
+        <div class="select-box">
+          <select id="new-ej-grupo" style="width: 100%;">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Nombre del Ejercicio</label>
+        <input type="text" id="new-ej-nombre" placeholder="Ej. Press inclinado con mancuernas" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: var(--r-sm); color: white; outline:none; font-family:inherit; font-size:13px;" />
+      </div>
+      <div>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Imagen Ilustrativa</label>
+        <div class="select-box">
+          <input type="file" id="new-ej-imagen" accept="image/*" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: var(--r-sm); color: white; outline:none; font-family:inherit; font-size:13px; box-sizing: border-box;" />
+        </div>
+      </div>
+      <div>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Series × Reps por defecto</label>
+        <input type="text" id="new-ej-reps" value="4 × 10" placeholder="Ej. 4 × 10 o 3 × 12" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: var(--r-sm); color: white; outline:none; font-family:inherit; font-size:13px;" />
+      </div>
+      <div>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Observaciones / Notas por defecto</label>
+        <input type="text" id="new-ej-notas" placeholder="Ej. Mantener codos a 90 grados" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: var(--r-sm); color: white; outline:none; font-family:inherit; font-size:13px;" />
+      </div>
+    </div>
+    <div class="modal-footer" style="padding: 14px 24px; display: flex; gap: 10px; border-top: 1px solid var(--border); margin-top:0;">
+      <button type="button" class="btn-secondary" onclick="closeModal('modal-nuevo-ejercicio')" style="flex: 1; height: 38px;">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="guardarNuevoEjercicio()" style="flex: 1; height: 38px;">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== WHATSAPP SHARE MODAL =================== -->
+<div class="modal-overlay" id="modal-compartir-whatsapp" style="z-index: 2200;">
+  <div class="modal" style="max-width: 560px; width: 92%;">
+    <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 16px 20px;">
+      <h2 style="display: flex; align-items: center; gap: 8px; font-size: 18px; color: #25D366;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Enviar Rutina a WhatsApp
+      </h2>
+      <button class="modal-close" onclick="closeModal('modal-compartir-whatsapp')">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
+      <div id="whatsapp-instruction-banner" style="background: rgba(37, 211, 102, 0.08); border: 1px solid rgba(37, 211, 102, 0.25); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #E2E8F0; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 20px;">💡</span>
+        <div id="whatsapp-instruction-text">
+          <strong>Tarjeta de rutina lista.</strong> Selecciona cómo deseas enviarla:
+        </div>
+      </div>
+
+      <!-- Preview container -->
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Vista Previa de la Tarjeta</label>
+        <div id="whatsapp-preview-container" style="max-height: 260px; overflow-y: auto; background: #080c14; border: 1px solid var(--border); border-radius: 12px; padding: 8px; text-align: center; position: relative;">
+          <div id="whatsapp-preview-loading" style="padding: 20px; color: var(--text-muted); font-size: 13px;">📸 Generando tarjeta...</div>
+          <img id="whatsapp-preview-img" style="max-width: 100%; height: auto; border-radius: 8px; display: none; margin: 0 auto; box-shadow: 0 8px 20px rgba(0,0,0,0.5);" />
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding: 14px 20px; display: flex; gap: 10px; border-top: 1px solid var(--border); flex-direction: column;">
+      <button type="button" class="btn-primary" id="btn-share-mobile" onclick="compartirNativoRutinaActual()" style="width: 100%; height: 42px; background: #25D366; border-color: #25D366; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;">
+        📱 Compartir por WhatsApp (Imagen + Texto)
+      </button>
+
+      <button type="button" class="btn-primary" id="btn-share-desktop" onclick="copiarYAbrirWhatsappActual()" style="width: 100%; height: 42px; background: #25D366; border-color: #25D366; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;">
+        📋 Copiar e ir a WhatsApp Web (Pega con Ctrl+V)
+      </button>
+
+      <div style="display: flex; gap: 10px; width: 100%;">
+        <button type="button" class="btn-secondary" onclick="descargarImagenRutinaActual()" style="flex: 1; height: 36px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          📥 Descargar Imagen (PNG)
+        </button>
+        <button type="button" class="btn-secondary" onclick="abrirSoloTextoWhatsapp()" style="flex: 1; height: 36px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          💬 Enviar Solo Texto
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="persist.js"></script><script src="shared.js"></script>
+<script>
+  document.getElementById('sidebar-container').innerHTML = buildSidebar('rutinas');
+  document.getElementById('topbar-container').innerHTML = buildTopbar('Creador de Rutinas');
+  document.getElementById('toast-container').innerHTML = buildToast();
+
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const MESES_ICONS = { Enero:'❄️',Febrero:'💝',Marzo:'🌿',Abril:'🌸',Mayo:'🌻',Junio:'☀️',Julio:'🏖️',Agosto:'🔥',Septiembre:'🍂',Octubre:'🎃',Noviembre:'🍁',Diciembre:'🎄' };
+
+  const BIBLIOTECA = {
+    'Pecho': [
+      { nombre: 'Peck Deck', imagen: '1.jpeg', reps: '4 × 10', notas: 'Mantener codos a la altura de hombros' },
+      { nombre: 'Apertura Centro', imagen: '1.jpeg', reps: '4 × 10', notas: 'Enfocar contracción al centro' },
+      { nombre: 'Apertura Baja', imagen: '1.jpeg', reps: '4 × 10', notas: 'Enfocar parte inferior del pectoral' },
+      { nombre: 'Apertura Alta', imagen: '1.jpeg', reps: '4 × 10', notas: 'Enfocar haz clavicular' },
+      { nombre: 'Flexiones (Pushups)', imagen: '1.jpeg', reps: '4 × 10', notas: 'Espalda recta, rango completo' },
+      { nombre: 'Press de banca', imagen: '1.jpeg', reps: '4 × 10', notas: 'Controlar bajada' },
+      { nombre: 'Press inclinado', imagen: '1.jpeg', reps: '4 × 10', notas: 'Enfocar haz clavicular' },
+      { nombre: 'Fondos en paralelas', imagen: '1.jpeg', reps: '3 × 10', notas: 'Inclinación hacia adelante' }
+    ],
+    'Espalda': [
+      { nombre: 'Jalón Abierto', imagen: '3.jpeg', reps: '4 × 10', notas: 'Llevar barra al pecho alto' },
+      { nombre: 'Jalón Cerrado', imagen: '3.jpeg', reps: '4 × 10', notas: 'Tracción con codos pegados' },
+      { nombre: 'Remo con cable', imagen: '3.jpeg', reps: '4 × 10', notas: 'Mantener espalda recta' },
+      { nombre: 'Dominadas', imagen: '3.jpeg', reps: '4 × 10', notas: 'Subir superando la barbilla' },
+      { nombre: 'Hiper Extensión', imagen: '3.jpeg', reps: '4 × 10', notas: 'Extensión controlada de lumbar' },
+      { nombre: 'Remo con barra', imagen: '3.jpeg', reps: '4 × 10', notas: 'Espalda recta, inclinación 45 grados' }
+    ],
+    'Hombros': [
+      { nombre: 'Press Arnold', imagen: '1.jpeg', reps: '4 × 10', notas: 'Giro completo de muñecas' },
+      { nombre: 'Press Militar', imagen: '1.jpeg', reps: '4 × 10', notas: 'Core firme, empuje vertical' },
+      { nombre: 'Vuelos Frontales', imagen: '4.jpeg', reps: '4 × 10', notas: 'Elevación alterna al frente' },
+      { nombre: 'Vuelos Laterales', imagen: '4.jpeg', reps: '4 × 12', notas: 'Subir mancuernas hasta hombros' },
+      { nombre: 'Face pull', imagen: '3.jpeg', reps: '4 × 15', notas: 'Rotación externa de hombro' }
+    ],
+    'Bíceps': [
+      { nombre: 'Curl Bíceps', imagen: '4.jpeg', reps: '4 × 10', notas: 'Evitar balanceos del cuerpo' },
+      { nombre: 'Bíceps Polea', imagen: '4.jpeg', reps: '4 × 10', notas: 'Tensión constante' },
+      { nombre: 'Curl Martillo', imagen: '4.jpeg', reps: '4 × 10', notas: 'Agarre neutro vertical' },
+      { nombre: 'Martillo Polea', imagen: '4.jpeg', reps: '4 × 10', notas: 'Usar soga en polea baja' },
+      { nombre: 'Predicador', imagen: '4.jpeg', reps: '4 × 10', notas: 'Apoyo completo del brazo' }
+    ],
+    'Tríceps': [
+      { nombre: 'Extensión Tríceps', imagen: '4.jpeg', reps: '4 × 10', notas: 'Codos fijos a los lados' },
+      { nombre: 'Copa Tríceps', imagen: '4.jpeg', reps: '4 × 10', notas: 'Mancuerna a dos manos sobre la cabeza' },
+      { nombre: 'Fondos Banco', imagen: '1.jpeg', reps: '3 × 12', notas: 'Bajar codos a 90 grados' },
+      { nombre: 'Press Francés', imagen: '1.jpeg', reps: '3 × 10', notas: 'Barra Z a la frente' }
+    ],
+    'Pierna': [
+      { nombre: 'Desplantes Frontales', imagen: '2.jpeg', reps: '4 × 10', notas: 'Paso largo, mantener equilibrio' },
+      { nombre: 'Sentadilla Goblet', imagen: '2.jpeg', reps: '4 × 10', notas: 'Sostener peso en el pecho' },
+      { nombre: 'Desplantes Inversos', imagen: '2.jpeg', reps: '4 × 10', notas: 'Paso hacia atrás controlado' },
+      { nombre: 'Extensión Cuádriceps', imagen: '2.jpeg', reps: '4 × 10', notas: 'Contracción isométrica de 1s arriba' },
+      { nombre: 'Pantorrilla de Pie', imagen: '2.jpeg', reps: '4 × 12', notas: 'Rango de movimiento completo' },
+      { nombre: 'Leg Curl Sentado', imagen: '2.jpeg', reps: '4 × 12', notas: 'Ajustar rodillo bajo tobillo' },
+      { nombre: 'Curl Femoral Aislado', imagen: '2.jpeg', reps: '4 × 12', notas: 'Acostado o de pie unilateral' },
+      { nombre: 'Peso Muerto', imagen: '2.jpeg', reps: '4 × 12', notas: 'Espalda recta, empuje con femoral y glúteos' },
+      { nombre: 'Aductor', imagen: '2.jpeg', reps: '4 × 12', notas: 'Cierre controlado' },
+      { nombre: 'Prensa', imagen: '2.jpeg', reps: '3 × 12', notas: 'Pies al centro, no bloquear rodillas' }
+    ],
+    'Glúteos': [
+      { nombre: 'Hip Thrust', imagen: '2.jpeg', reps: '3 × 12', notas: 'Contracción fuerte arriba, empujar talones' },
+      { nombre: 'Patada Polea', imagen: '2.jpeg', reps: '3 × 12', notas: 'Patada recta hacia atrás' },
+      { nombre: 'Sentadilla Sumo', imagen: '2.jpeg', reps: '3 × 12', notas: 'Pies abiertos a 45 grados, bajar profundo' },
+      { nombre: 'Abductor en Máquina', imagen: '2.jpeg', reps: '3 × 12', notas: 'Apertura controlada' }
+    ],
+    'Core': [
+      { nombre: 'Crunches con Torsión', imagen: '5.jpeg', reps: '4 × 30s', notas: 'Llevar codo a rodilla contraria' },
+      { nombre: 'Giros Rusos Disco', imagen: '5.jpeg', reps: '4 × 30s', notas: 'Girar torso de lado a lado' },
+      { nombre: 'Windshield Wipers (Wipers)', imagen: '5.jpeg', reps: '4 × 30s', notas: 'Piernas rectas oscilando a los lados' },
+      { nombre: 'Elevación de Piernas', imagen: '5.jpeg', reps: '4 × 30s', notas: 'Lento al bajar sin tocar suelo' },
+      { nombre: 'Plancha Lateral', imagen: '5.jpeg', reps: '4 × 30s', notas: 'Mantener cadera elevada' },
+      { nombre: 'Crunch Superior', imagen: '5.jpeg', reps: '3 × 30s', notas: 'Elevar escápulas del suelo' },
+      { nombre: 'Heel Touch', imagen: '5.jpeg', reps: '3 × 30s', notas: 'Tocar talones alternadamente' },
+      { nombre: 'Plancha con Disco', imagen: '5.jpeg', reps: '3 × 30s', notas: 'Plancha con peso en lumbar' },
+      { nombre: 'Frog Crunch', imagen: '5.jpeg', reps: '3 × 30s', notas: 'Juntar plantas de pies, crujir rodillas' }
+    ],
+    'Cardio': [
+      { nombre: 'Jumping Jacks', imagen: '6.jpeg', reps: '3 × 1m', notas: 'Ritmo rápido continuo' },
+      { nombre: 'Burpees', imagen: '6.jpeg', reps: '3 × 1m', notas: 'Saltar alto, plancha estricta' },
+      { nombre: 'Escaladores (Mountain Climbers)', imagen: '6.jpeg', reps: '3 × 1m', notas: 'Llevar rodillas al pecho alternando rápido' },
+      { nombre: 'Sentadilla con Salto', imagen: '6.jpeg', reps: '3 × 1m', notas: 'Salto explosivo al subir' },
+      { nombre: 'Batidas de Cuerda (Battle Ropes)', imagen: '6.jpeg', reps: '3 × 1m', notas: 'Mantener flexión de piernas' },
+      { nombre: 'Trotadora', imagen: '6.jpeg', reps: '1 × 20m', notas: 'Trote continuo ritmo moderado' }
+    ]
+  };
+
+  // Load custom exercises from localStorage and merge into BIBLIOTECA
+  function cargarEjerciciosCustom() {
+    try {
+      // First, load custom muscle groups
+      const customGroups = localStorage.getItem('romeo_custom_groups');
+      if (customGroups) {
+        const parsedGroups = JSON.parse(customGroups);
+        parsedGroups.forEach(g => {
+          if (!BIBLIOTECA[g]) {
+            BIBLIOTECA[g] = [];
+          }
+        });
+      }
+
+      // Then, load custom exercises
+      const custom = localStorage.getItem('romeo_custom_exercises');
+      if (custom) {
+        const parsed = JSON.parse(custom);
+        parsed.forEach(ej => {
+          if (BIBLIOTECA[ej.grupo]) {
+            if (!BIBLIOTECA[ej.grupo].some(x => x.nombre.toLowerCase() === ej.nombre.toLowerCase())) {
+              BIBLIOTECA[ej.grupo].push({
+                nombre: ej.nombre,
+                imagen: ej.imagen || '1.jpeg',
+                reps: ej.reps || '4 × 10',
+                notas: ej.notas || ''
+              });
+            }
+          } else {
+            BIBLIOTECA[ej.grupo] = [{
+              nombre: ej.nombre,
+              imagen: ej.imagen || '1.jpeg',
+              reps: ej.reps || '4 × 10',
+              notas: ej.notas || ''
+            }];
+          }
+        });
+      }
+    } catch(e) {
+      console.error("Error al cargar ejercicios/grupos custom:", e);
+    }
+  }
+
+  // Load custom exercises immediately
+  cargarEjerciciosCustom();
+
+  function getImagenEjercicio(ej) {
+    if (!ej) return null;
+    if (ej.imagen && typeof ej.imagen === 'string' && ej.imagen.trim() !== '') {
+      return ej.imagen;
+    }
+    if (!ej.nombre) return null;
+    const norm = ej.nombre.trim().toLowerCase();
+    if (typeof BIBLIOTECA === 'object') {
+      for (const [grupo, lista] of Object.entries(BIBLIOTECA)) {
+        if (Array.isArray(lista)) {
+          const found = lista.find(x => x && x.nombre && x.nombre.trim().toLowerCase() === norm);
+          if (found && found.imagen) return found.imagen;
+        }
+      }
+    }
+    return null;
+  }
+
+  function abrirBibliotecaVisual() {
+    const uid = selU.value; if (!uid) { showToast('Selecciona un cliente primero', 'error'); return; }
+    openModal('modal-biblioteca-visual');
+    
+    // Build tabs list
+    const tabsContainer = document.getElementById('lib-groups');
+    const categories = Object.keys(BIBLIOTECA);
+    tabsContainer.innerHTML = categories.map(cat => 
+      `<button type="button" class="lib-tab-btn" id="tab-${cat}" onclick="cambiarCategoriaBiblioteca('${cat}')">${cat}</button>`
+    ).join('');
+    
+    // Set default category to the first one
+    cambiarCategoriaBiblioteca(categories[0]);
+  }
+
+  let currentLibraryCategory = 'Pecho';
+
+  function cambiarCategoriaBiblioteca(cat) {
+    currentLibraryCategory = cat;
+    const searchInput = document.getElementById('lib-search-input');
+    if (searchInput) searchInput.value = '';
+    
+    // Set active tab
+    document.querySelectorAll('.lib-tab-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById('tab-' + cat);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    // Set header
+    document.getElementById('lib-current-category').textContent = cat;
+    
+    renderBibliotecaGrid(BIBLIOTECA[cat] || []);
+  }
+
+  function renderBibliotecaGrid(exercises) {
+    const grid = document.getElementById('lib-exercises-grid');
+    if (exercises.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:40px;">No hay ejercicios que coincidan.</div>`;
+      return;
+    }
+    
+    grid.innerHTML = exercises.map(ej => {
+      let grupo = currentLibraryCategory;
+      for (const [g, list] of Object.entries(BIBLIOTECA)) {
+        if (list.some(x => x.nombre === ej.nombre)) {
+          grupo = g;
+          break;
+        }
+      }
+      const imgPath = ej.imagen ? (ej.imagen.startsWith('data:image') ? ej.imagen : `img/${ej.imagen}`) : 'img/1.jpeg';
+      return `
+        <div class="lib-card" onclick="seleccionarEjercicioBiblioteca('${grupo}', '${ej.nombre}')">
+          <div class="lib-img-container">
+            <img class="lib-img" src="${imgPath}" alt="${ej.nombre}" />
+          </div>
+          <div class="lib-card-body">
+            <div class="lib-card-name">${ej.nombre}</div>
+            <div class="lib-card-reps">👉 Series y reps: ${ej.reps}</div>
+            <div class="lib-card-notes">${ej.notes || ej.notas || 'Sin notas especiales.'}</div>
+            <button type="button" class="lib-card-btn">＋ Agregar a Rutina</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function filtrarEjerciciosBiblioteca() {
+    const text = document.getElementById('lib-search-input').value.toLowerCase().trim();
+    if (!text) {
+      renderBibliotecaGrid(BIBLIOTECA[currentLibraryCategory] || []);
+      return;
+    }
+    
+    let allMatches = [];
+    Object.keys(BIBLIOTECA).forEach(cat => {
+      const filtered = BIBLIOTECA[cat].filter(ej => ej.nombre.toLowerCase().includes(text));
+      allMatches = allMatches.concat(filtered);
+    });
+    
+    renderBibliotecaGrid(allMatches);
+  }
+
+  function seleccionarEjercicioBiblioteca(grupo, nombre) {
+    const list = BIBLIOTECA[grupo];
+    if (!list) return;
+    const ej = list.find(x => x.nombre === nombre);
+    if (!ej) return;
+    
+    // Add exercise block
+    agregarBloque({
+      nombre: ej.nombre,
+      grupo: grupo,
+      imagen: ej.imagen || null,
+      series: ej.reps || '4 × 10',
+      peso: '',
+      descanso: ej.nombre.toLowerCase().includes('plancha') || ej.nombre.toLowerCase().includes('trotadora') || ej.nombre.toLowerCase().includes('hiit') || ej.nombre.toLowerCase().includes('circuito') || ej.nombre.toLowerCase().includes('escalador') || ej.nombre.toLowerCase().includes('jump') ? '' : '60',
+      notas: ej.notas || ''
+    });
+    
+    showToast(`✅ ${ej.nombre} agregado`);
+  }
+
+  // Populate usuario select
+  const selU = document.getElementById('select-usuario');
+  
+  function populateUsuarioSelect() {
+    if (!selU) return;
+    const currentVal = selU.value;
+    selU.innerHTML = '<option value="">— Seleccionar Cliente —</option>';
+    
+    if (DB && DB.usuarios) {
+      DB.usuarios.forEach(u => { 
+        const o = document.createElement('option'); 
+        o.value = u.id; 
+        o.textContent = u.nombre; 
+        selU.appendChild(o); 
+      });
+    }
+
+    const activeUser = typeof getActiveUser === 'function' ? getActiveUser() : null;
+    const urlParam = new URLSearchParams(window.location.search).get('usuario');
+    
+    if (currentVal && DB.usuarios && DB.usuarios.some(u => u.id === currentVal)) {
+      selU.value = currentVal;
+    } else if (urlParam && DB.usuarios && DB.usuarios.some(u => u.id === urlParam)) {
+      selU.value = urlParam;
+    } else if (activeUser && DB.usuarios && DB.usuarios.some(u => u.id === activeUser.id)) {
+      selU.value = activeUser.id;
+    } else if (DB.usuarios && DB.usuarios.length > 0) {
+      selU.value = DB.usuarios[0].id;
+    }
+    
+    onUsuarioChange();
+  }
+
+  populateUsuarioSelect();
+  window.addEventListener('romeo_db_loaded', () => {
+    populateUsuarioSelect();
+  });
+
+  function onUsuarioChange() {
+    const uid = selU ? selU.value : document.getElementById('select-usuario').value;
+    if (uid && DB && DB.usuarios) {
+      const u = DB.usuarios.find(x => x.id === uid);
+      if (u && typeof setActiveUser === 'function') setActiveUser(u);
+    }
+    document.getElementById('btn-nueva-rutina').disabled = !uid;
+    const btnCopiar = document.getElementById('btn-copiar-rutinas-cliente');
+    if (btnCopiar) btnCopiar.disabled = !uid;
+    const filterBar = document.getElementById('rutinas-filters-bar');
+    if (filterBar) filterBar.style.display = uid ? 'flex' : 'none';
+    renderRutinas(uid);
+  }
+
+  function renderRutinas(uid) {
+    const container = document.getElementById('rutinas-container');
+    if (!uid) { container.innerHTML = `<div class="empty-state"><span class="empty-icon">🏋️</span><h3>Selecciona un cliente</h3><p>Elige un cliente para ver o crear sus rutinas</p></div>`; return; }
+    
+    // Read filter values
+    const fMes = document.getElementById('filter-r-mes').value;
+    const fAnio = document.getElementById('filter-r-anio').value;
+    const fTipo = document.getElementById('filter-r-tipo').value;
+
+    let rutinas = DB.rutinas.filter(r => r.usuarioId === uid);
+    if (fMes) rutinas = rutinas.filter(r => r.mes === fMes);
+    if (fAnio) rutinas = rutinas.filter(r => r.anio == fAnio);
+    if (fTipo) rutinas = rutinas.filter(r => r.tipo === fTipo);
+
+    rutinas.sort((a,b) => b.anio - a.anio || MESES.indexOf(b.mes) - MESES.indexOf(a.mes));
+
+    if (!rutinas.length) {
+      container.innerHTML = `<div class="empty-state"><span class="empty-icon">📋</span><h3>Sin rutinas</h3><p>${fMes||fAnio||fTipo?'Ajusta los filtros para encontrar otras rutinas.':'Este cliente aún no tiene rutinas asignadas.'}</p>${!fMes&&!fAnio&&!fTipo?'<button class="btn-primary" onclick="abrirEditor()">Crear Primera Rutina</button>':''}</div>`; return;
+    }
+
+    container.innerHTML = `<div class="rutinas-timeline">` + rutinas.map((r, index) => {
+      const diff = (r.pesoFin && r.pesoIni) ? (r.pesoFin - r.pesoIni).toFixed(1) : null;
+      const diffHtml = diff !== null ? `<span class="peso-diff ${parseFloat(diff)<0?'pos':'neg'}">${parseFloat(diff)>0?'+':''}${diff} kg</span>` : '';
+      return `<div class="rutina-card">
+        <div class="rutina-card-header" onclick="toggleBody('b-${r.id}', this)">
+          <div class="rutina-mes-badge">
+            <div class="mes-icon">${MESES_ICONS[r.mes]||'📅'}</div>
+            <div class="rutina-mes-info"><h3>${r.mes} ${r.anio}</h3><p>${r.tipo} · ${r.grupo||''} · ${r.dias} días/sem · ${r.ejercicios.length} ejercicios</p></div>
+          </div>
+          <div class="rutina-pesos">
+            ${r.pesoIni?`<div class="peso-item"><div class="peso-val">${r.pesoIni}kg</div><div class="peso-lbl">Inicial</div></div><div class="peso-arrow">→</div>`:''}
+            ${r.pesoFin?`<div class="peso-item"><div class="peso-val">${r.pesoFin}kg</div><div class="peso-lbl">Final</div></div>`:''}
+            ${diffHtml}
+          </div>
+          <div class="rutina-header-actions">
+            <button class="btn-ghost" onclick="event.stopPropagation();abrirEditor('${r.id}', true)" title="Clonar Rutina">👯 Clonar</button>
+            <button class="btn-ghost" onclick="event.stopPropagation();abrirEditor('${r.id}')">✏️ Editar</button>
+            <button class="btn-ghost btn-danger" onclick="event.stopPropagation();eliminarRutina('${r.id}')">🗑️</button>
+            <span class="rutina-chevron">${index === 0 ? '▲' : '▼'}</span>
+          </div>
+        </div>
+        <div class="rutina-card-body" id="b-${r.id}" style="display:${index === 0 ? 'block' : 'none'}">
+          ${r.ejercicios.length ? `
+          <table class="ejercicios-table">
+            <thead><tr><th>#</th><th>Ilustración</th><th>Ejercicio</th><th>Grupo Muscular</th><th>Series × Reps</th><th>Peso</th><th>Descanso</th><th>Notas</th></tr></thead>
+            <tbody>
+              ${r.ejercicios.map((ej,i)=>`<tr>
+                <td style="color:var(--text-muted);font-size:11px">${i+1}</td>
+                <td>
+                  ${ej.imagen ? `<img src="${ej.imagen.startsWith('data:image') ? ej.imagen : `img/${ej.imagen}`}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />` : '<span style="color:var(--text-muted); font-size:11px;">—</span>'}
+                </td>
+                <td><strong>${ej.nombre}</strong></td>
+                <td><span class="tag-muscular">${ej.grupo}</span></td>
+                <td>${ej.series||'—'}</td>
+                <td style="font-weight:800;color:var(--pink)">${ej.peso?ej.peso+' kg':'—'}</td>
+                <td style="color:var(--text-secondary)">${ej.descanso?ej.descanso+'s':'—'}</td>
+                <td style="color:var(--text-muted);font-size:11px">${ej.notes||ej.notas||'—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>` : '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Sin ejercicios registrados.</p>'}
+          ${r.notes||r.notas?`<div class="rutina-notas">📝 <strong>Recomendaciones:</strong> ${r.notes||r.notas}</div>`:''}
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <a href="entrenamiento.html?rutina=${r.id}&usuario=${r.usuarioId}" class="btn-ghost" style="text-decoration:none">▶️ Iniciar Sesión</a>
+            <button class="btn-ghost" onclick="abrirEditor('${r.id}', true)">👯 Clonar Rutina</button>
+            <button class="btn-ghost" onclick="abrirEditor('${r.id}')">✏️ Editar Rutina</button>
+            <button class="btn-ghost" onclick="compartirWhatsapp('${r.id}')" style="color:#25D366; border-color:rgba(37,211,102,0.3); display:inline-flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;fill:none;stroke:currentColor;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  function toggleBody(id, header) {
+    const b = document.getElementById(id);
+    if (!b) return;
+    const open = b.style.display !== 'none';
+    b.style.display = open ? 'none' : '';
+    const ch = header.querySelector('.rutina-chevron');
+    if (ch) ch.textContent = open ? '▼' : '▲';
+  }
+
+  function abrirEditor(rid = null, isClone = false) {
+    const uid = selU.value; if (!uid) { showToast('Selecciona un cliente primero', 'error'); return; }
+    document.getElementById('form-rutina').reset();
+    document.getElementById('r-id').value = '';
+    document.getElementById('blocks-container').innerHTML = '';
+    document.getElementById('editor-title').textContent = 'Nueva Rutina';
+
+    const now = new Date();
+    document.getElementById('r-mes').value = MESES[now.getMonth()];
+    document.getElementById('r-anio').value = now.getFullYear();
+    const u = DB.usuarios.find(x=>x.id===uid);
+    const lastR = DB.rutinas.filter(r=>r.usuarioId===uid).slice(-1)[0];
+    document.getElementById('r-peso-ini').value = lastR?.pesoFin || u?.peso || '';
+    if (rid) {
+      const r = DB.rutinas.find(x=>x.id===rid); if (!r) return;
+      document.getElementById('editor-title').textContent = isClone ? 'Clonar Rutina' : 'Editar Rutina';
+      document.getElementById('r-id').value = isClone ? '' : r.id;
+      document.getElementById('r-nombre').value = isClone ? (r.nombre ? r.nombre + ' - Copia' : '') : (r.nombre || '');
+      document.getElementById('r-mes').value = isClone ? MESES[now.getMonth()] : r.mes;
+      document.getElementById('r-anio').value = isClone ? now.getFullYear() : r.anio;
+      document.getElementById('r-tipo').value = r.tipo;
+      document.getElementById('r-grupo').value = r.grupo || 'Cuerpo Completo';
+      document.getElementById('r-dias').value = r.dias;
+      document.getElementById('r-peso-ini').value = isClone ? (r.pesoFin || r.pesoIni || '') : (r.pesoIni || '');
+      document.getElementById('r-peso-fin').value = isClone ? '' : (r.pesoFin || '');
+      document.getElementById('r-notas').value = r.notas || '';
+      r.ejercicios.forEach(ej => agregarBloque(ej));
+    } else {
+      agregarBloque(); agregarBloque(); agregarBloque();
+    }
+    
+    // Populate the routine importer dropdown
+    populateImportSelect();
+    
+    openModal('modal-editor');
+  }
+
+  let blockCount = 0;
+  function agregarBloque(data = null) {
+    blockCount++;
+    const container = document.getElementById('blocks-container');
+    const id = 'blk-' + genId();
+    const div = document.createElement('div');
+    div.className = 'exercise-block';
+    div.id = id;
+    
+    const imgPath = data?.imagen ? (data.imagen.startsWith('data:image') ? data.imagen : `img/${data.imagen}`) : '';
+    const imgDisplay = imgPath ? 'block' : 'none';
+
+    div.innerHTML = `
+      <div class="block-grid">
+        <div class="block-num">${blockCount}</div>
+        <input type="text" placeholder="Ej. Press de banca" class="blk-nombre" value="${data?.nombre||''}" oninput="buscarHistorialDeEjercicio(this)" onfocus="buscarHistorialDeEjercicio(this)" />
+        <select class="blk-grupo">
+          ${Object.keys(BIBLIOTECA).map(g=>`<option ${data?.grupo===g?'selected':''}>${g}</option>`).join('')}
+        </select>
+        <div class="blk-img-wrap" style="display:flex; align-items:center; gap:4px; overflow:hidden; position:relative;">
+          <label class="blk-img-upload-btn" style="cursor:pointer; font-size:11px; padding:4px 8px; background:rgba(255,255,255,0.1); border-radius:4px; text-align:center; white-space:nowrap; flex:1; border:1px solid var(--border);">
+            📷 Img
+            <input type="file" class="blk-imagen" accept="image/*" onchange="updateRowImagePreview(this)" style="display:none;" data-base64="${data?.imagen||''}" />
+          </label>
+          <img class="row-img-preview" src="${imgPath}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; border:1px solid var(--border); display:${imgDisplay}; flex-shrink:0;" />
+        </div>
+        <input type="text" placeholder="4 × 12" class="blk-series" value="${data?.series||''}" />
+        <input type="number" placeholder="60" class="blk-peso" value="${data?.peso||''}" step="0.5" />
+        <input type="number" placeholder="60" class="blk-descanso" value="${data?.descanso||''}" min="15" />
+        <input type="text" placeholder="Agarre neutro..." class="blk-notas" value="${data?.notes||data?.notas||''}" />
+        <button type="button" class="btn-remove-block" onclick="document.getElementById('${id}').remove();reNumerarBloques()" title="Eliminar">✕</button>
+      </div>
+      <div class="blk-historia" id="hist-${id}" style="display:none;"></div>`;
+    container.appendChild(div);
+    if (data?.nombre) {
+      const input = div.querySelector('.blk-nombre');
+      if (input) buscarHistorialDeEjercicio(input);
+    }
+  }
+
+  function buscarHistorialDeEjercicio(input) {
+    const block = input.closest('.exercise-block');
+    if (!block) return;
+    const blockId = block.id;
+    const histDiv = document.getElementById('hist-' + blockId);
+    if (!histDiv) return;
+
+    const usuarioId = document.getElementById('select-usuario').value;
+    const nombreEj = input.value.trim();
+
+    if (!usuarioId || !nombreEj) {
+      histDiv.style.display = 'none';
+      histDiv.innerHTML = '';
+      return;
+    }
+
+    const norm = nombreEj.toLowerCase();
+    
+    // Auto-fill from BIBLIOTECA
+    if (!input.dataset.autofilled) {
+      for (const [grupo, lista] of Object.entries(BIBLIOTECA)) {
+        const ej = lista.find(x => x.nombre.toLowerCase() === norm);
+        if (ej) {
+          input.dataset.autofilled = "true";
+          const selectGrupo = block.querySelector('.blk-grupo');
+          if (selectGrupo) selectGrupo.value = grupo;
+          
+          const selectSeries = block.querySelector('.blk-series');
+          if (selectSeries && !selectSeries.value) selectSeries.value = ej.reps || '4 × 10';
+          
+          if (ej.imagen) {
+            const fileInput = block.querySelector('.blk-imagen');
+            const preview = block.querySelector('.row-img-preview');
+            if (fileInput && preview && !fileInput.dataset.base64) {
+              fileInput.dataset.base64 = ej.imagen;
+              preview.src = ej.imagen.startsWith('data:image') ? ej.imagen : `img/${ej.imagen}`;
+              preview.style.display = 'block';
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    // Find in past routines
+    const rH = [];
+    DB.rutinas.filter(r => r.usuarioId === usuarioId).forEach(r => {
+      r.ejercicios.forEach(ej => {
+        if (ej.nombre.trim().toLowerCase() === norm && ej.peso) {
+          rH.push({
+            peso: ej.peso,
+            mes: r.mes,
+            anio: r.anio,
+            creado: r.creado || ''
+          });
+        }
+      });
+    });
+    // Sort routines history by created date descending
+    rH.sort((a,b) => (b.creado || '').localeCompare(a.creado || ''));
+
+    // Find in past completed sessions
+    const sH = [];
+    (DB.sesiones || []).filter(s => s && s.usuarioId === usuarioId && s.estado === 'completada').forEach(s => {
+      if (Array.isArray(s.ejercicios)) {
+        s.ejercicios.forEach(ej => {
+          if (ej && typeof ej.nombre === 'string' && ej.nombre.trim().toLowerCase() === norm) {
+            const weights = Array.isArray(ej.series) ? ej.series.filter(set => set && set.completado && set.peso).map(set => parseFloat(set.peso)).filter(p => !isNaN(p)) : [];
+            if (weights.length > 0) {
+              const maxPeso = Math.max(...weights);
+              sH.push({
+                peso: maxPeso,
+                fecha: s.fecha || '',
+                label: formatDate(s.fecha || '')
+              });
+            }
+          }
+        });
+      }
+    });
+    // Sort sessions history by date descending
+    sH.sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+    // Get unique top weights to show
+    const routinesTop = [];
+    const routinesSeen = new Set();
+    for (let r of rH) {
+      const key = r.peso + '-' + r.mes + '-' + r.anio;
+      if (!routinesSeen.has(key)) {
+        routinesSeen.add(key);
+        routinesTop.push(r);
+        if (routinesTop.length >= 3) break;
+      }
+    }
+
+    const sessionsTop = [];
+    const sessionsSeen = new Set();
+    for (let s of sH) {
+      const key = s.peso + '-' + s.fecha;
+      if (!sessionsSeen.has(key)) {
+        sessionsSeen.add(key);
+        sessionsTop.push(s);
+        if (sessionsTop.length >= 3) break;
+      }
+    }
+
+    if (routinesTop.length === 0 && sessionsTop.length === 0) {
+      histDiv.style.display = 'none';
+      histDiv.innerHTML = '';
+      return;
+    }
+
+    let html = `<div class="blk-historia-title">🏋️ Historial de peso de este cliente para "${nombreEj}":</div>`;
+    
+    if (sessionsTop.length > 0) {
+      const tags = sessionsTop.map(s => `<span class="blk-historia-tag" onclick="aplicarPesoFila('${blockId}', ${s.peso})">${s.peso} kg</span> (${s.label})`).join(', ');
+      html += `<div class="blk-historia-section"><strong>Levantado en sesiones:</strong> ${tags}</div>`;
+    }
+    
+    if (routinesTop.length > 0) {
+      const tags = routinesTop.map(r => `<span class="blk-historia-tag" onclick="aplicarPesoFila('${blockId}', ${r.peso})">${r.peso} kg</span> (${r.mes} ${r.anio})`).join(', ');
+      html += `<div class="blk-historia-section"><strong>Asignado en rutinas:</strong> ${tags}</div>`;
+    }
+
+    histDiv.innerHTML = html;
+    histDiv.style.display = 'block';
+  }
+
+  function aplicarPesoFila(blockId, peso) {
+    const block = document.getElementById(blockId);
+    if (!block) return;
+    const pesoInput = block.querySelector('.blk-peso');
+    if (pesoInput) {
+      pesoInput.value = peso;
+      showToast(`✅ Peso establecido a ${peso} kg`);
+    }
+  }
+
+  function updateRowImagePreview(input) {
+    const preview = input.closest('.blk-img-wrap').querySelector('.row-img-preview');
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        input.dataset.base64 = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
+      input.dataset.base64 = '';
+    }
+  }
+
+  function reNumerarBloques() {
+    document.querySelectorAll('#blocks-container .block-num').forEach((el, i) => el.textContent = i + 1);
+    blockCount = document.querySelectorAll('#blocks-container .exercise-block').length;
+  }
+
+  function limpiarBloques() {
+    if (!confirm('¿Limpiar todos los ejercicios?')) return;
+    document.getElementById('blocks-container').innerHTML = '';
+    blockCount = 0;
+  }
+
+  async function guardarRutina(e) {
+    e.preventDefault();
+    const uid = selU.value;
+    const id = document.getElementById('r-id').value;
+    const ejercicios = [];
+    document.querySelectorAll('#blocks-container .exercise-block').forEach(row => {
+      const nombre = row.querySelector('.blk-nombre').value.trim(); if (!nombre) return;
+      ejercicios.push({ 
+        nombre, 
+        grupo: row.querySelector('.blk-grupo').value, 
+        imagen: row.querySelector('.blk-imagen').dataset.base64 || null,
+        series: row.querySelector('.blk-series').value.trim(), 
+        peso: row.querySelector('.blk-peso').value.trim(), 
+        descanso: row.querySelector('.blk-descanso').value.trim(), 
+        notas: row.querySelector('.blk-notas').value.trim() 
+      });
+    });
+    const rutina = {
+      id: id || genId(), usuarioId: uid,
+      nombre: document.getElementById('r-nombre').value.trim(),
+      mes: document.getElementById('r-mes').value,
+      anio: parseInt(document.getElementById('r-anio').value),
+      tipo: document.getElementById('r-tipo').value,
+      grupo: document.getElementById('r-grupo').value,
+      dias: document.getElementById('r-dias').value,
+      pesoIni: parseFloat(document.getElementById('r-peso-ini').value) || null,
+      pesoFin: parseFloat(document.getElementById('r-peso-fin').value) || null,
+      ejercicios, notas: document.getElementById('r-notas').value.trim(),
+      creado: new Date().toISOString(),
+    };
+    if (id) { const i = DB.rutinas.findIndex(x=>x.id===id); if(i>=0) DB.rutinas[i]=rutina; }
+    else DB.rutinas.push(rutina);
+    await saveDB(); closeModal('modal-editor'); renderRutinas(uid);
+    showToast('✅ Rutina guardada correctamente');
+  }
+
+  async function eliminarRutina(id) {
+    const ok = await confirmModal({
+      title: 'Eliminar Rutina',
+      message: '¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.',
+      confirmText: 'Sí, Eliminar',
+      cancelText: 'Cancelar',
+      isDanger: true
+    });
+    if (!ok) return;
+    DB.rutinas = DB.rutinas.filter(r=>r.id!==id);
+    await saveDB(); renderRutinas(selU.value); showToast('🗑️ Rutina eliminada', 'error');
+  }
+
+  function drawRoundRectCanvas(ctx, x, y, width, height, radius, fillStyle, strokeStyle) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fillStyle) {
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+    if (strokeStyle) {
+      ctx.strokeStyle = strokeStyle;
+      ctx.stroke();
+    }
+  }
+
+  function cargarImagenElemento(srcOrEj) {
+    const src = (typeof srcOrEj === 'object' && srcOrEj !== null) ? getImagenEjercicio(srcOrEj) : srcOrEj;
+    if (!src) return Promise.resolve(null);
+    const fullSrc = (src.startsWith('data:') || src.startsWith('http') || src.startsWith('img/')) ? src : 'img/' + src;
+    return new Promise((resolve) => {
+      const img = new Image();
+      if (fullSrc.startsWith('http://') || fullSrc.startsWith('https://')) {
+        img.crossOrigin = 'Anonymous';
+      }
+      img.onload = () => resolve(img);
+      img.onerror = (err) => {
+        console.warn("Error cargando imagen:", fullSrc, err);
+        resolve(null);
+      };
+      img.src = fullSrc;
+    });
+  }
+
+  async function generarImagenRutinaCanvas(r, nombreCliente) {
+    let loadedImages = [];
+    try {
+      loadedImages = await Promise.all(
+        r.ejercicios.map(ej => cargarImagenElemento(ej))
+      );
+    } catch(e) {
+      console.warn("Error cargando algunas imágenes:", e);
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const pad = 24;
+        const width = 640;
+        const headerH = 70;
+        const infoH = 65;
+        
+        const validImgs = r.ejercicios.map((ej, idx) => ({ ej, img: loadedImages[idx], idx })).filter(x => !!x.img);
+        const hasPosters = validImgs.length > 0;
+        
+        const posterCols = 2;
+        const posterGap = 12;
+        const posterW = (width - (pad * 2) - posterGap) / posterCols; // 290px
+        const posterH = Math.round(posterW * 0.95); // 275px
+        const posterRows = Math.ceil(validImgs.length / posterCols);
+        const posterSectionH = hasPosters ? (30 + (posterRows * (posterH + posterGap))) : 0;
+
+        let ejTotalH = 0;
+        r.ejercicios.forEach((ej, idx) => {
+          const hasImg = !!loadedImages[idx];
+          const baseH = hasImg ? 68 : 58;
+          ejTotalH += (ej.notas ? baseH + 16 : baseH) + 10;
+        });
+
+        const recomendH = r.notas ? 58 : 0;
+        const footerH = 45;
+        const height = pad + headerH + 15 + infoH + 15 + (hasPosters ? posterSectionH + 15 : 0) + ejTotalH + recomendH + footerH + pad;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width * 2;
+        canvas.height = height * 2;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+
+        // Linear gradient background
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#0B0F19');
+        grad.addColorStop(1, '#151C2E');
+        drawRoundRectCanvas(ctx, 0, 0, width, height, 18, grad, 'rgba(0, 229, 160, 0.35)');
+
+        // Header - Badge R
+        drawRoundRectCanvas(ctx, pad, pad, 32, 32, 8, '#00E5A0');
+        ctx.fillStyle = '#0B0F19';
+        ctx.font = '900 16px sans-serif';
+        ctx.fillText('R', pad + 10, pad + 22);
+
+        // Header - Title
+        ctx.fillStyle = '#00E5A0';
+        ctx.font = '900 18px sans-serif';
+        ctx.fillText('ROMEO PERSONAL TRAINER', pad + 44, pad + 20);
+
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '600 11px sans-serif';
+        ctx.fillText('PLAN DE ENTRENAMIENTO PERSONALIZADO', pad + 44, pad + 34);
+
+        // Date pill
+        drawRoundRectCanvas(ctx, width - pad - 120, pad, 120, 40, 10, 'rgba(0, 229, 160, 0.1)', 'rgba(0, 229, 160, 0.3)');
+        ctx.fillStyle = '#00E5A0';
+        ctx.font = '800 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${r.mes} ${r.anio}`, width - pad - 60, pad + 18);
+        ctx.fillStyle = '#CBD5E1';
+        ctx.font = '600 10px sans-serif';
+        ctx.fillText(`${r.dias} Días / Semana`, width - pad - 60, pad + 32);
+        ctx.textAlign = 'left';
+
+        // Divider
+        ctx.strokeStyle = 'rgba(0, 229, 160, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad, pad + 56);
+        ctx.lineTo(width - pad, pad + 56);
+        ctx.stroke();
+
+        let curY = pad + 70;
+
+        // Info Box
+        drawRoundRectCanvas(ctx, pad, curY, width - (pad * 2), infoH, 12, 'rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.08)');
+        
+        // Athlete
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '700 10px sans-serif';
+        ctx.fillText('ATLETA / CLIENTE', pad + 14, curY + 20);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '800 17px sans-serif';
+        ctx.fillText(nombreCliente, pad + 14, curY + 44);
+
+        // Plan
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '700 10px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('PLAN / ENFOQUE', width - pad - 14, curY + 20);
+        ctx.fillStyle = '#FF2A6D';
+        ctx.font = '800 15px sans-serif';
+        ctx.fillText(r.nombre || `${r.tipo} - ${r.grupo}`, width - pad - 14, curY + 44);
+        ctx.textAlign = 'left';
+
+        curY += infoH + 15;
+
+        // Render Poster Collage Grid if exercise images are available
+        if (hasPosters) {
+          ctx.fillStyle = '#00E5A0';
+          ctx.font = '800 12px sans-serif';
+          ctx.fillText('📸 INFOGRAFÍAS Y GUÍA DE TÉCNICA DE EJERCICIOS', pad, curY + 16);
+
+          validImgs.forEach((v, i) => {
+            const col = i % posterCols;
+            const row = Math.floor(i / posterCols);
+            const px = pad + (col * (posterW + posterGap));
+            const py = curY + 28 + (row * (posterH + posterGap));
+
+            drawRoundRectCanvas(ctx, px, py, posterW, posterH, 12, 'rgba(0, 0, 0, 0.4)', 'rgba(0, 229, 160, 0.3)');
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(px + 10, py);
+            ctx.lineTo(px + posterW - 10, py);
+            ctx.quadraticCurveTo(px + posterW, py, px + posterW, py + 10);
+            ctx.lineTo(px + posterW, py + posterH - 10);
+            ctx.quadraticCurveTo(px + posterW, py + posterH, px + posterW - 10, py + posterH);
+            ctx.lineTo(px + 10, py + posterH);
+            ctx.quadraticCurveTo(px, py + posterH, px, py + posterH - 10);
+            ctx.lineTo(px, py + 10);
+            ctx.quadraticCurveTo(px, py, px + 10, py);
+            ctx.closePath();
+            ctx.clip();
+
+            ctx.drawImage(v.img, px, py, posterW, posterH);
+            ctx.restore();
+
+            // Overlay exercise number badge on poster top left
+            drawRoundRectCanvas(ctx, px + 8, py + 8, 24, 24, 12, '#00E5A0');
+            ctx.fillStyle = '#0B0F19';
+            ctx.font = '900 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${v.idx + 1}`, px + 20, py + 24);
+            ctx.textAlign = 'left';
+          });
+
+          curY += posterSectionH + 15;
+        }
+
+        // Exercises Summary Table
+        r.ejercicios.forEach((ej, i) => {
+          const img = loadedImages[i];
+          const hasImg = !!img;
+          const baseH = hasImg ? 68 : 58;
+          const itemH = ej.notas ? baseH + 16 : baseH;
+
+          drawRoundRectCanvas(ctx, pad, curY, width - (pad * 2), itemH, 10, 'rgba(255, 255, 255, 0.03)', 'rgba(255, 255, 255, 0.07)');
+
+          // Circle index
+          const circleY = curY + (hasImg ? 21 : 16);
+          drawRoundRectCanvas(ctx, pad + 12, circleY, 26, 26, 13, 'rgba(0, 229, 160, 0.15)');
+          ctx.fillStyle = '#00E5A0';
+          ctx.font = '800 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${i + 1}`, pad + 25, circleY + 17);
+          ctx.textAlign = 'left';
+
+          let textX = pad + 48;
+
+          // Draw illustration / image if present
+          if (img) {
+            const imgSize = 50;
+            const imgX = pad + 46;
+            const imgY = curY + (itemH - imgSize) / 2;
+
+            drawRoundRectCanvas(ctx, imgX, imgY, imgSize, imgSize, 8, 'rgba(255, 255, 255, 0.06)', 'rgba(255, 255, 255, 0.2)');
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(imgX + 8, imgY);
+            ctx.lineTo(imgX + imgSize - 8, imgY);
+            ctx.quadraticCurveTo(imgX + imgSize, imgY, imgX + imgSize, imgY + 8);
+            ctx.lineTo(imgX + imgSize, imgY + imgSize - 8);
+            ctx.quadraticCurveTo(imgX + imgSize, imgY + imgSize, imgX + imgSize - 8, imgY + imgSize);
+            ctx.lineTo(imgX + 8, imgY + imgSize);
+            ctx.quadraticCurveTo(imgX, imgY + imgSize, imgX, imgY + imgSize - 8);
+            ctx.lineTo(imgX, imgY + 8);
+            ctx.quadraticCurveTo(imgX, imgY, imgX + 8, imgY);
+            ctx.closePath();
+            ctx.clip();
+
+            ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
+            ctx.restore();
+
+            textX = imgX + imgSize + 12;
+          }
+
+          // Exercise Name
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = '700 14px sans-serif';
+          ctx.fillText(ej.nombre, textX, curY + (hasImg ? 22 : 25));
+
+          // Pills
+          let pillX = textX;
+          const pillY = curY + (hasImg ? 30 : 32);
+          const seriesText = `📊 ${ej.series || '—'}`;
+          drawRoundRectCanvas(ctx, pillX, pillY, 75, 20, 5, 'rgba(0, 229, 160, 0.12)', 'rgba(0, 229, 160, 0.25)');
+          ctx.fillStyle = '#00E5A0';
+          ctx.font = '700 10px sans-serif';
+          ctx.fillText(seriesText, pillX + 6, pillY + 14);
+          pillX += 83;
+
+          if (ej.peso) {
+            const pesoText = `🏋️ ${ej.peso} kg`;
+            drawRoundRectCanvas(ctx, pillX, pillY, 75, 20, 5, 'rgba(255, 42, 109, 0.12)', 'rgba(255, 42, 109, 0.25)');
+            ctx.fillStyle = '#FF2A6D';
+            ctx.font = '700 10px sans-serif';
+            ctx.fillText(pesoText, pillX + 6, pillY + 14);
+            pillX += 83;
+          }
+
+          if (ej.descanso) {
+            const descText = `⏱️ ${ej.descanso}s`;
+            drawRoundRectCanvas(ctx, pillX, pillY, 70, 20, 5, 'rgba(255, 209, 102, 0.12)', 'rgba(255, 209, 102, 0.25)');
+            ctx.fillStyle = '#FFD166';
+            ctx.font = '700 10px sans-serif';
+            ctx.fillText(descText, pillX + 6, pillY + 14);
+          }
+
+          if (ej.notas) {
+            ctx.fillStyle = '#94A3B8';
+            ctx.font = 'italic 10px sans-serif';
+            ctx.fillText(`📝 ${ej.notas}`, textX, curY + itemH - 10);
+          }
+
+          curY += itemH + 10;
+        });
+
+        // Recommendations
+        if (r.notas) {
+          drawRoundRectCanvas(ctx, pad, curY, width - (pad * 2), 46, 10, 'rgba(255, 209, 102, 0.06)', 'rgba(255, 209, 102, 0.25)');
+          ctx.fillStyle = '#FFE082';
+          ctx.font = '700 11px sans-serif';
+          ctx.fillText(`📝 Recomendaciones: ${r.notas}`, pad + 14, curY + 27);
+          curY += 56;
+        }
+
+        // Footer
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.beginPath();
+        ctx.moveTo(pad, curY + 5);
+        ctx.lineTo(width - pad, curY + 5);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748B';
+        ctx.font = '600 10px sans-serif';
+        ctx.fillText('🔥 Romeo Personal Trainer System', pad, curY + 22);
+
+        ctx.fillStyle = '#00E5A0';
+        ctx.font = '700 10px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('¡A darle con toda! 💪', width - pad, curY + 22);
+
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/png');
+      } catch (e) {
+        console.error("Error en render Canvas:", e);
+        resolve(null);
+      }
+    });
+  }
+
+  async function getExerciseFile(ej, index) {
+    const imgSrc = getImagenEjercicio(ej);
+    if (!imgSrc) return null;
+    const fullSrc = (imgSrc.startsWith('data:') || imgSrc.startsWith('http') || imgSrc.startsWith('img/')) ? imgSrc : 'img/' + imgSrc;
+    try {
+      let blob;
+      if (fullSrc.startsWith('data:')) {
+        const parts = fullSrc.split(',');
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        blob = new Blob([u8arr], { type: mime });
+      } else {
+        const res = await fetch(fullSrc);
+        blob = await res.blob();
+      }
+      const mime = blob.type || (fullSrc.endsWith('.png') ? 'image/png' : 'image/jpeg');
+      const ext = (mime.includes('png') || fullSrc.endsWith('.png')) ? 'png' : 'jpeg';
+      const safeName = (ej.nombre || 'ejercicio').replace(/[^a-zA-Z0-9]/g, '_');
+      return new File([blob], `${index + 1}_${safeName}.${ext}`, { type: mime });
+    } catch(e) {
+      console.warn("Error creando archivo de ejercicio:", fullSrc, e);
+      return null;
+    }
+  }
+
+  let currentShareState = {
+    blob: null,
+    filename: '',
+    msg: '',
+    cleanPhone: '',
+    exerciseFiles: []
+  };
+
+  function abrirWhatsappLink(cleanPhone, msg) {
+    const textEncoded = encodeURIComponent(msg);
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth <= 1024);
+    if (isMobile) {
+      const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${textEncoded}` : `https://api.whatsapp.com/send?text=${textEncoded}`;
+      window.location.href = url;
+    } else {
+      const url = cleanPhone ? `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${textEncoded}` : `https://web.whatsapp.com/send?text=${textEncoded}`;
+      window.open(url, '_blank');
+    }
+  }
+
+  async function compartirWhatsapp(id) {
+    const r = DB.rutinas.find(x => x.id === id);
+    if (!r) return;
+    const u = DB.usuarios.find(x => x.id === r.usuarioId);
+    const nombreCliente = u ? u.nombre : 'Cliente';
+    
+    let telefono = u?.telefono || '';
+    let cleanPhone = telefono.replace(/\D/g, '');
+    
+    if (!cleanPhone) {
+      const input = prompt("Este cliente no tiene un teléfono guardado. Ingresa el número de WhatsApp (con código de país, ej: 573001234567) o deja en blanco para seleccionar el contacto en WhatsApp:", "");
+      if (input === null) return;
+      cleanPhone = input.replace(/\D/g, '');
+    }
+    
+    let msg = `*ROMEO PERSONAL TRAINER* 🏋️\n\n`;
+    msg += `¡Hola, *${nombreCliente}*! 💪 Aquí tienes tu rutina para *${r.mes} ${r.anio}*:\n`;
+    msg += `📌 *Plan:* ${r.nombre || `${r.tipo} - ${r.grupo}`}\n`;
+    msg += `⏱️ *Frecuencia:* ${r.dias} días por semana\n\n`;
+    
+    msg += `*EJERCICIOS ASIGNADOS:*\n`;
+    r.ejercicios.forEach((ej, index) => {
+      msg += `-----------------------------\n`;
+      msg += `${index + 1}️⃣ *${ej.nombre.toUpperCase()}*\n`;
+      msg += `   • *Series/Reps:* ${ej.series || '—'}\n`;
+      if (ej.peso) msg += `   • *Peso sugerido:* ${ej.peso} kg\n`;
+      if (ej.descanso) msg += `   • *Descanso:* ${ej.descanso} seg\n`;
+      if (ej.notas) msg += `   • *Notas:* _${ej.notas}_\n`;
+    });
+    msg += `-----------------------------\n\n`;
+    
+    if (r.notas) {
+      msg += `📝 *Recomendaciones:* _${r.notas}_\n\n`;
+    }
+    
+    msg += `¡A darle con toda! 🔥`;
+
+    // Cargar archivos individuales de ilustraciones para envío múltiple en WhatsApp
+    const exerciseFiles = [];
+    for (let i = 0; i < r.ejercicios.length; i++) {
+      const f = await getExerciseFile(r.ejercicios[i], i);
+      if (f) exerciseFiles.push(f);
+    }
+
+    currentShareState = {
+      blob: null,
+      filename: `Rutina_${nombreCliente.replace(/\s+/g, '_')}.png`,
+      msg: msg,
+      cleanPhone: cleanPhone,
+      exerciseFiles: exerciseFiles
+    };
+
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth <= 1024);
+    const btnMobile = document.getElementById('btn-share-mobile');
+    const btnDesktop = document.getElementById('btn-share-desktop');
+    const instructionText = document.getElementById('whatsapp-instruction-text');
+    const imgEl = document.getElementById('whatsapp-preview-img');
+    const loadingEl = document.getElementById('whatsapp-preview-loading');
+
+    if (btnMobile) btnMobile.style.display = isMobile ? 'flex' : 'none';
+    if (btnDesktop) btnDesktop.style.display = isMobile ? 'none' : 'flex';
+
+    if (instructionText) {
+      if (isMobile) {
+        instructionText.innerHTML = '<strong>Tarjeta e Infografías Listas.</strong> Presiona <strong>Compartir por WhatsApp</strong> para enviar el álbum de imágenes y el texto.';
+      } else {
+        instructionText.innerHTML = '<strong>Tarjeta de rutina lista.</strong> Al hacer clic en <strong>Copiar e ir a WhatsApp Web</strong>, la imagen se copia a tu portapapeles. En WhatsApp presiona <kbd style="background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:4px;font-family:monospace;">Ctrl + V</kbd> para pegarla.';
+      }
+    }
+
+    if (imgEl) imgEl.style.display = 'none';
+    if (loadingEl) {
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = '📸 Generando tarjeta visual e infografías...';
+    }
+
+    openModal('modal-compartir-whatsapp');
+
+    const blob = await generarImagenRutinaCanvas(r, nombreCliente);
+    currentShareState.blob = blob;
+
+    if (blob && imgEl) {
+      imgEl.src = URL.createObjectURL(blob);
+      imgEl.style.display = 'block';
+      if (loadingEl) loadingEl.style.display = 'none';
+    } else if (loadingEl) {
+      loadingEl.textContent = '⚠️ Se enviará la rutina en texto a WhatsApp.';
+    }
+  }
+
+  async function copiarYAbrirWhatsappActual() {
+    const { blob, cleanPhone, msg } = currentShareState;
+    let copiado = false;
+
+    if (blob && navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        copiado = true;
+      } catch (e) {
+        console.warn('Clipboard write no disponible:', e);
+      }
+    }
+
+    if (copiado) {
+      showToast('📋 ¡Tarjeta copiada al portapapeles! Presiona Ctrl+V en WhatsApp para pegarla.', 'info', 6000);
+    }
+    
+    if (blob) {
+      descargarImagenRutinaActual();
+    }
+
+    abrirWhatsappLink(cleanPhone, msg);
+    closeModal('modal-compartir-whatsapp');
+  }
+
+  function descargarImagenRutinaActual() {
+    const { blob, filename } = currentShareState;
+    if (!blob) {
+      showToast('Generando imagen, aguarde un segundo...', 'error');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename || 'Rutina_RomeoPT.png';
+    a.click();
+    showToast('📥 Imagen descargada', 'success');
+  }
+
+  async function compartirNativoRutinaActual() {
+    const { blob, filename, msg, cleanPhone, exerciseFiles } = currentShareState;
+    const filesToShare = [];
+
+    // Tarjeta principal de resumen
+    if (blob) {
+      filesToShare.push(new File([blob], filename || 'Rutina_RomeoPT.png', { type: 'image/png' }));
+    }
+
+    // Adjuntar todas las imágenes/infografías individuales de los ejercicios en un solo álbum multitrama de WhatsApp
+    if (exerciseFiles && exerciseFiles.length > 0) {
+      exerciseFiles.forEach(f => filesToShare.push(f));
+    }
+
+    if (filesToShare.length > 0 && navigator.canShare) {
+      try {
+        if (navigator.canShare({ files: filesToShare })) {
+          await navigator.share({
+            title: 'Rutina Romeo PT',
+            text: msg,
+            files: filesToShare
+          });
+          showToast('✅ Rutina e imágenes compartidas con éxito');
+          closeModal('modal-compartir-whatsapp');
+          return;
+        }
+      } catch (e) {
+        console.log('Share nativo multitrama cancelado o no disponible:', e);
+      }
+    }
+
+    abrirWhatsappLink(cleanPhone, msg);
+    closeModal('modal-compartir-whatsapp');
+  }
+
+  function abrirSoloTextoWhatsapp() {
+    const { cleanPhone, msg } = currentShareState;
+    abrirWhatsappLink(cleanPhone, msg);
+    closeModal('modal-compartir-whatsapp');
+  }
+
+  function populateNewExerciseGroups() {
+    const sel = document.getElementById('new-ej-grupo');
+    if (sel) {
+      sel.innerHTML = Object.keys(BIBLIOTECA).map(cat => `<option>${cat}</option>`).join('');
+    }
+  }
+
+  function abrirModalNuevoEjercicio() {
+    // Populate dropdown dynamically based on BIBLIOTECA keys
+    populateNewExerciseGroups();
+
+    // Reset values
+    document.getElementById('new-ej-nombre').value = '';
+    document.getElementById('new-ej-reps').value = '4 × 10';
+    document.getElementById('new-ej-notas').value = '';
+    
+    // Select current library category in the dropdown if available
+    const curCat = (document.getElementById('lib-current-category') ? document.getElementById('lib-current-category').textContent : 'Pecho') || 'Pecho';
+    document.getElementById('new-ej-grupo').value = curCat;
+    
+    // Auto-select correct default image based on group
+    const imgSelect = document.getElementById('new-ej-imagen');
+    if (imgSelect) {
+      imgSelect.value = '';
+    }
+    
+    openModal('modal-nuevo-ejercicio');
+  }
+
+  async function guardarNuevoEjercicio() {
+    const grupo = document.getElementById('new-ej-grupo').value;
+    const nombre = document.getElementById('new-ej-nombre').value.trim();
+    const imgInput = document.getElementById('new-ej-imagen');
+    let imagen = '';
+    if (imgInput.files && imgInput.files.length > 0) {
+      imagen = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(imgInput.files[0]);
+      });
+    }
+    const reps = document.getElementById('new-ej-reps').value.trim();
+    const notas = document.getElementById('new-ej-notas').value.trim();
+    
+    if (!nombre) {
+      showToast('Por favor, ingresa el nombre del ejercicio', 'error');
+      return;
+    }
+    
+    // Create new exercise object
+    const nuevoEj = { grupo, nombre, imagen, reps, notas };
+    
+    // Load existing customs
+    let customs = [];
+    try {
+      const saved = localStorage.getItem('romeo_custom_exercises');
+      if (saved) customs = JSON.parse(saved);
+    } catch(e) {}
+    
+    // Check for duplicates
+    const existsInMain = BIBLIOTECA[grupo] && BIBLIOTECA[grupo].some(x => x.nombre.toLowerCase() === nombre.toLowerCase());
+    if (existsInMain) {
+      showToast('El ejercicio ya existe en la biblioteca', 'error');
+      return;
+    }
+    
+    // Add to customs list
+    customs.push(nuevoEj);
+    localStorage.setItem('romeo_custom_exercises', JSON.stringify(customs));
+    
+    // Dynamically push to BIBLIOTECA
+    if (!BIBLIOTECA[grupo]) BIBLIOTECA[grupo] = [];
+    BIBLIOTECA[grupo].push({ nombre, imagen, reps, notas });
+    
+    showToast(`💪 Ejercicio guardado: ${nombre}`);
+    closeModal('modal-nuevo-ejercicio');
+    
+    // Refresh visual library explorer
+    const curCat = (document.getElementById('lib-current-category') ? document.getElementById('lib-current-category').textContent : '') || grupo;
+    if (curCat === grupo) {
+      cambiarCategoriaBiblioteca(grupo);
+    }
+  }
+
+  function abrirCrearGrupoMuscular() {
+    const nuevoGrupo = prompt("Ingresa el nombre del nuevo grupo muscular (ej. Antebrazo, Cuello):", "");
+    if (!nuevoGrupo) return;
+    const gName = nuevoGrupo.trim();
+    if (!gName) return;
+    
+    // Capitalize first letter
+    const capitalized = gName.charAt(0).toUpperCase() + gName.slice(1);
+    
+    // Check if group already exists in BIBLIOTECA
+    if (BIBLIOTECA[capitalized]) {
+      showToast('Este grupo muscular ya existe', 'error');
+      return;
+    }
+    
+    // Save to localStorage customs list
+    let customs = [];
+    try {
+      const saved = localStorage.getItem('romeo_custom_groups');
+      if (saved) customs = JSON.parse(saved);
+    } catch(e) {}
+    
+    if (!customs.includes(capitalized)) {
+      customs.push(capitalized);
+      localStorage.setItem('romeo_custom_groups', JSON.stringify(customs));
+    }
+    
+    // Add to in-memory BIBLIOTECA
+    BIBLIOTECA[capitalized] = [];
+    
+    showToast(`📁 Grupo muscular creado: ${capitalized}`);
+    
+    // Update the dropdown select inside the new exercise modal
+    populateNewExerciseGroups();
+    
+    // Pre-select the new group in the dropdown
+    document.getElementById('new-ej-grupo').value = capitalized;
+
+    // If the visual library modal is open, rebuild the tabs!
+    const modalLib = document.getElementById('modal-biblioteca-visual');
+    if (modalLib && modalLib.classList.contains('active')) {
+      const tabsContainer = document.getElementById('lib-groups');
+      if (tabsContainer) {
+        const categories = Object.keys(BIBLIOTECA);
+        tabsContainer.innerHTML = categories.map(cat => 
+          `<button type="button" class="lib-tab-btn" id="tab-${cat}" onclick="cambiarCategoriaBiblioteca('${cat}')">${cat}</button>`
+        ).join('');
+      }
+    }
+  }
+
+  function populateImportSelect() {
+    const select = document.getElementById('r-importar-select');
+    if (!select) return;
+    select.innerHTML = '<option value="">— Copiar ejercicios de otra rutina —</option>';
+    
+    const currentEditId = document.getElementById('r-id')?.value;
+
+    const sorted = [...DB.rutinas].sort((a, b) => {
+      const uA = DB.usuarios.find(x => x.id === a.usuarioId)?.nombre || '';
+      const uB = DB.usuarios.find(x => x.id === b.usuarioId)?.nombre || '';
+      return uA.localeCompare(uB) || b.anio - a.anio || MESES.indexOf(b.mes) - MESES.indexOf(a.mes);
+    });
+
+    sorted.forEach(r => {
+      if (currentEditId && r.id === currentEditId) return;
+      const u = DB.usuarios.find(x => x.id === r.usuarioId);
+      if (!u) return;
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      const nombreRutina = r.nombre ? `"${r.nombre}"` : (r.grupo || r.tipo || 'Rutina');
+      opt.textContent = `${u.nombre} — ${nombreRutina} (${r.mes} ${r.anio}${r.tipo ? ' · ' + r.tipo : ''})`;
+      select.appendChild(opt);
+    });
+  }
+
+  async function importarEjerciciosDeRutina(rid) {
+    if (!rid) return;
+    const r = DB.rutinas.find(x => x.id === rid);
+    if (!r) {
+      document.getElementById('r-importar-select').value = '';
+      return;
+    }
+
+    const ejs = r.ejercicios || [];
+    if (ejs.length === 0) {
+      showToast('Esta rutina no contiene ejercicios para copiar', 'error');
+      document.getElementById('r-importar-select').value = '';
+      return;
+    }
+
+    const ok = await confirmModal({
+      title: 'Copiar Ejercicios',
+      message: `¿Quieres copiar los ${ejs.length} ejercicios de "${r.nombre || 'esta rutina'}" a la rutina actual? Esto reemplazará los ejercicios que tengas en pantalla.`,
+      confirmText: 'Sí, Copiar Ejercicios',
+      cancelText: 'Cancelar'
+    });
+
+    if (!ok) {
+      document.getElementById('r-importar-select').value = '';
+      return;
+    }
+
+    document.getElementById('blocks-container').innerHTML = '';
+    blockCount = 0;
+
+    ejs.forEach(ej => agregarBloque(ej));
+
+    const currentNombre = document.getElementById('r-nombre').value;
+    if (!currentNombre || currentNombre.trim() === '') {
+      document.getElementById('r-nombre').value = r.nombre ? `${r.nombre} (Copia)` : 'Rutina Copiada';
+    }
+    if (r.tipo) document.getElementById('r-tipo').value = r.tipo;
+    if (r.grupo) document.getElementById('r-grupo').value = r.grupo;
+    if (r.dias) document.getElementById('r-dias').value = r.dias;
+    if (r.notas || r.notes) document.getElementById('r-notas').value = r.notas || r.notes || '';
+
+    showToast(`✅ ${ejs.length} ejercicios copiados. Recuerda hacer clic en "Guardar Rutina"`, 'success');
+    document.getElementById('r-importar-select').value = '';
+  }
+
+  // Escuchar cambios de base de datos desde otras pestañas o al cargar IndexedDB
+  window.addEventListener('romeo_db_loaded', () => {
+    populateUsuarioSelect();
+  });
+  // --- PACKS LOGIC ---
+  let currentEditingPackId = null;
+
+  function switchTab(tab) {
+    document.getElementById('view-clientes').style.display = tab === 'clientes' ? 'block' : 'none';
+    document.getElementById('view-packs').style.display = tab === 'packs' ? 'block' : 'none';
+    
+    document.getElementById('tab-clientes').className = tab === 'clientes' ? 'btn-primary active-tab' : 'btn-secondary';
+    document.getElementById('tab-packs').className = tab === 'packs' ? 'btn-primary active-tab' : 'btn-secondary';
+
+    if (tab === 'packs') {
+      renderPacks();
+    } else {
+      onUsuarioChange();
+    }
+  }
+
+  // Override abrirEditor
+  const _oldAbrirEditor = abrirEditor;
+  abrirEditor = function(rid = null, isClone = false, packId = null) {
+    // Setup client selector inside modal
+    const groupCli = document.getElementById('group-r-cliente');
+    const selectCli = document.getElementById('r-usuario-id');
+    const mainUid = document.getElementById('select-usuario').value;
+    selectCli.innerHTML = '';
+    DB.usuarios.forEach(u => {
+      const o = document.createElement('option');
+      o.value = u.id; o.textContent = u.nombre;
+      selectCli.appendChild(o);
+    });
+
+    if (packId) {
+      if (groupCli) groupCli.style.display = 'none';
+    } else {
+      if (groupCli) groupCli.style.display = 'block';
+      if (mainUid) selectCli.value = mainUid;
+    }
+
+    document.getElementById('form-rutina').reset();
+    document.getElementById('r-id').value = '';
+    document.getElementById('blocks-container').innerHTML = '';
+    document.getElementById('editor-title').textContent = packId ? (rid && !isClone ? 'Editar Rutina de Pack' : 'Nueva Rutina en Pack') : 'Nueva Rutina';
+
+    const now = new Date();
+    document.getElementById('r-mes').value = MESES[now.getMonth()];
+    document.getElementById('r-anio').value = now.getFullYear();
+
+    let r = null;
+    if (packId && rid) {
+      const p = DB.packs.find(x => x.id === packId);
+      if (p) r = p.rutinas.find(x => x.id === rid);
+    } else if (rid) {
+      r = DB.rutinas.find(x => x.id === rid);
+    }
+
+    if (rid && !r) return;
+
+    if (r) {
+      document.getElementById('editor-title').textContent = packId ? 'Editar Rutina de Pack' : (isClone ? 'Clonar Rutina' : 'Editar Rutina');
+      document.getElementById('r-id').value = isClone ? '' : r.id;
+      document.getElementById('r-nombre').value = isClone ? (r.nombre ? r.nombre + ' - Copia' : '') : (r.nombre || '');
+      document.getElementById('r-mes').value = isClone ? MESES[now.getMonth()] : r.mes;
+      document.getElementById('r-anio').value = isClone ? now.getFullYear() : r.anio;
+      document.getElementById('r-tipo').value = r.tipo;
+      document.getElementById('r-grupo').value = r.grupo || 'Cuerpo Completo';
+      document.getElementById('r-dias').value = r.dias;
+      document.getElementById('r-notas').value = r.notes || r.notas || '';
+      if (!packId) {
+        if (r.usuarioId && !isClone) selectCli.value = r.usuarioId;
+        else if (isClone && mainUid) selectCli.value = mainUid;
+        
+        const targetUid = selectCli.value;
+        const targetUser = DB.usuarios.find(x => x.id === targetUid);
+        const lastR = DB.rutinas.filter(rt => rt.usuarioId === targetUid).slice(-1)[0];
+        document.getElementById('r-peso-ini').value = isClone ? (lastR?.pesoFin || targetUser?.peso || '') : (r.pesoIni || '');
+        document.getElementById('r-peso-fin').value = isClone ? '' : (r.pesoFin || '');
+      }
+      
+      r.ejercicios.forEach(ej => agregarBloque(ej));
+    } else if (!packId) {
+      const uid = selectCli.value || mainUid; 
+      const u = DB.usuarios.find(x=>x.id===uid);
+      const lastR = DB.rutinas.filter(rt=>rt.usuarioId===uid).slice(-1)[0];
+      document.getElementById('r-peso-ini').value = lastR?.pesoFin || u?.peso || '';
+    }
+    
+    if (typeof populateImportSelect === 'function') populateImportSelect();
+    openModal('modal-editor');
+  };
+
+  function copiarRutinasClienteModal() {
+    const originUid = document.getElementById('select-usuario').value;
+    if (!originUid) {
+      showToast('Selecciona un cliente de origen primero', 'error');
+      return;
+    }
+    const originUser = DB.usuarios.find(u => u.id === originUid);
+    if (!originUser) return;
+    
+    const userRoutines = DB.rutinas.filter(r => r.usuarioId === originUid);
+    if (userRoutines.length === 0) {
+      showToast(`El cliente ${originUser.nombre} no tiene rutinas para copiar`, 'error');
+      return;
+    }
+
+    const otherUsers = DB.usuarios.filter(u => u.id !== originUid);
+    if (otherUsers.length === 0) {
+      showToast('Necesitas registrar al menos otro cliente para copiar las rutinas', 'error');
+      return;
+    }
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-copiar-rutinas-cliente" style="display:flex; z-index:9999;">
+        <div class="modal" style="max-width:420px; width:100%;">
+          <div class="modal-header">
+            <h2>📋 Copiar Rutinas de Cliente</h2>
+            <button class="modal-close" onclick="document.getElementById('modal-copiar-rutinas-cliente').remove()">✕</button>
+          </div>
+          <div style="padding:15px 0;">
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+              Copiar rutinas de <strong>${originUser.nombre}</strong> (${userRoutines.length} disponible${userRoutines.length > 1 ? 's' : ''}):
+            </p>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-muted);">Copiar a (Cliente Destino):</label>
+              <select id="select-copiar-destino-usuario" style="width:100%; padding:10px; border-radius:8px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border);">
+                ${otherUsers.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:15px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-muted);">Filtrar por rutina (Opcional):</label>
+              <select id="select-copiar-filtro-rutina" style="width:100%; padding:10px; border-radius:8px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border);">
+                <option value="">Todas las rutinas</option>
+                ${userRoutines.map(r => {
+                  const rNombre = r.nombre ? r.nombre : (r.tipo ? `${r.tipo} (${r.mes} ${r.anio})` : `Rutina (${r.mes} ${r.anio})`);
+                  return `<option value="${r.id}">${rNombre}</option>`;
+                }).join('')}
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button class="btn-ghost" onclick="document.getElementById('modal-copiar-rutinas-cliente').remove()">Cancelar</button>
+            <button class="btn-primary" onclick="confirmarCopiarRutinasCliente('${originUid}')">Copiar Rutinas</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  async function confirmarCopiarRutinasCliente(originUid) {
+    const destUid = document.getElementById('select-copiar-destino-usuario').value;
+    const filterRutinaId = document.getElementById('select-copiar-filtro-rutina').value;
+    if (!destUid) return;
+
+    let rutinasToCopy = DB.rutinas.filter(r => r.usuarioId === originUid);
+    if (filterRutinaId) {
+      rutinasToCopy = rutinasToCopy.filter(r => r.id === filterRutinaId);
+    }
+
+    if (rutinasToCopy.length === 0) {
+      showToast('No hay rutinas seleccionadas para copiar', 'error');
+      return;
+    }
+
+    const now = new Date().toISOString();
+    rutinasToCopy.forEach(r => {
+      const copyR = JSON.parse(JSON.stringify(r));
+      copyR.id = genId();
+      copyR.usuarioId = destUid;
+      copyR.creado = now;
+      if (Array.isArray(copyR.ejercicios)) {
+        copyR.ejercicios.forEach(ej => {
+          if (!ej.imagen) ej.imagen = getImagenEjercicio(ej);
+        });
+      }
+      DB.rutinas.push(copyR);
+    });
+
+    await saveDB();
+    const modal = document.getElementById('modal-copiar-rutinas-cliente');
+    if (modal) modal.remove();
+
+    // Limpiar filtros activos para garantizar que se muestren las rutinas copiadas
+    const fMes = document.getElementById('filter-r-mes'); if (fMes) fMes.value = '';
+    const fAnio = document.getElementById('filter-r-anio'); if (fAnio) fAnio.value = '';
+    const fTipo = document.getElementById('filter-r-tipo'); if (fTipo) fTipo.value = '';
+    
+    document.getElementById('select-usuario').value = destUid;
+    const destUser = DB.usuarios.find(u => u.id === destUid);
+    if (destUser && typeof setActiveUser === 'function') {
+      await setActiveUser(destUser);
+    }
+    
+    onUsuarioChange();
+    showToast(`✅ ${rutinasToCopy.length} rutina(s) copiada(s) a ${destUser?.nombre || 'el cliente seleccionado'}`, 'success');
+  }
+
+  // Override guardarRutina
+  const _oldGuardarRutina = guardarRutina;
+  guardarRutina = async function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('btn-guardar-rutina');
+    const submitText = document.getElementById('btn-guardar-rutina-text');
+    if (submitBtn) {
+      if (submitBtn.disabled) return;
+      submitBtn.disabled = true;
+      if (submitText) submitText.textContent = '⏳ Guardando...';
+    }
+
+    try {
+      const id = document.getElementById('r-id').value;
+      const ejercicios = [];
+      document.querySelectorAll('#blocks-container .exercise-block').forEach(row => {
+        const nombre = row.querySelector('.blk-nombre').value.trim(); if (!nombre) return;
+        const uploadedImg = row.querySelector('.blk-imagen').dataset.base64 || null;
+        const imagen = uploadedImg || getImagenEjercicio({ nombre });
+        ejercicios.push({ 
+          nombre, 
+          grupo: row.querySelector('.blk-grupo').value, 
+          imagen,
+          series: row.querySelector('.blk-series').value.trim(), 
+          peso: row.querySelector('.blk-peso').value.trim(), 
+          descanso: row.querySelector('.blk-descanso').value.trim(), 
+          notas: row.querySelector('.blk-notas').value.trim() 
+        });
+      });
+
+      const rutina = {
+        id: id || genId(),
+        nombre: document.getElementById('r-nombre').value.trim(),
+        mes: document.getElementById('r-mes').value,
+        anio: parseInt(document.getElementById('r-anio').value),
+        tipo: document.getElementById('r-tipo').value,
+        grupo: document.getElementById('r-grupo').value,
+        dias: parseInt(document.getElementById('r-dias').value),
+        ejercicios,
+        notas: document.getElementById('r-notas').value.trim()
+      };
+
+      if (currentEditingPackId) {
+        // Save to pack
+        const p = DB.packs.find(x => x.id === currentEditingPackId);
+        if (!p) return;
+        if (id) {
+          const idx = p.rutinas.findIndex(x => x.id === id);
+          if (idx >= 0) p.rutinas[idx] = rutina;
+          else p.rutinas.push(rutina);
+        } else {
+          p.rutinas.push(rutina);
+        }
+        await saveDB();
+        closeModal('modal-editor');
+        renderPacks();
+        showToast('Rutina guardada en el pack');
+      } else {
+        const uid = document.getElementById('r-usuario-id').value || document.getElementById('select-usuario').value; 
+        if (!uid) { showToast('Selecciona un cliente válido', 'error'); return; }
+        rutina.usuarioId = uid;
+        rutina.pesoIni = parseFloat(document.getElementById('r-peso-ini').value) || null;
+        rutina.pesoFin = parseFloat(document.getElementById('r-peso-fin').value) || null;
+
+        if (id) {
+          const idx = DB.rutinas.findIndex(x => x.id === id);
+          if (idx >= 0) DB.rutinas[idx] = rutina;
+          else DB.rutinas.push(rutina);
+        } else {
+          rutina.creado = new Date().toISOString();
+          DB.rutinas.push(rutina);
+        }
+        await saveDB();
+        closeModal('modal-editor');
+        
+        // Update main select and reset filters to guarantee new routine is visible
+        document.getElementById('select-usuario').value = uid;
+        if (document.getElementById('filter-r-mes')) document.getElementById('filter-r-mes').value = '';
+        if (document.getElementById('filter-r-anio')) document.getElementById('filter-r-anio').value = '';
+        if (document.getElementById('filter-r-tipo')) document.getElementById('filter-r-tipo').value = '';
+        
+        onUsuarioChange();
+        showToast('✅ Rutina guardada correctamente');
+      }
+    } catch(err) {
+      showToast('❌ Error al guardar rutina', 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        if (submitText) submitText.textContent = 'Guardar Rutina';
+      }
+    }
+  };
+
+  function renderPacks() {
+    const container = document.getElementById('packs-container');
+    if (!DB.packs || DB.packs.length === 0) {
+      container.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><span class="empty-icon">📦</span><h3>Sin Packs</h3><p>Crea tu primer pack o plantilla de rutinas.</p></div>`;
+      return;
+    }
+    
+    container.innerHTML = DB.packs.map(p => `
+      <div class="rutina-card" style="padding:15px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <h3 style="margin:0; font-size:18px; color:var(--pink);">${p.nombre}</h3>
+          <div>
+            <button class="btn-ghost" style="padding:4px;" onclick="editarNombrePack('${p.id}')">✏️</button>
+            <button class="btn-ghost btn-danger" style="padding:4px;" onclick="eliminarPack('${p.id}')">🗑️</button>
+          </div>
+        </div>
+        <p style="margin:0; font-size:13px; color:var(--text-secondary);">${p.rutinas.length} rutinas en este pack.</p>
+        
+        <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
+          ${p.rutinas.map(r => `
+            <div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:600;">${r.nombre || 'Rutina sin nombre'}</span>
+              <div>
+                <button class="btn-ghost" style="padding:4px;" onclick="abrirEditor('${r.id}', false, '${p.id}')">✏️</button>
+                <button class="btn-ghost btn-danger" style="padding:4px;" onclick="eliminarRutinaPack('${p.id}', '${r.id}')">🗑️</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="margin-top:10px; display:flex; gap:10px;">
+          <button class="btn-secondary" style="flex:1; font-size:12px; padding:6px;" onclick="abrirEditor(null, false, '${p.id}')">+ Añadir Rutina</button>
+          <button class="btn-primary" style="flex:1; font-size:12px; padding:6px;" onclick="asignarPackModal('${p.id}')">Asignar a Cliente</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function crearNuevoPack() {
+    const nombre = prompt('Nombre del nuevo Pack:');
+    if (!nombre) return;
+    if (!DB.packs) DB.packs = [];
+    DB.packs.push({ id: genId(), nombre, rutinas: [] });
+    await saveDB();
+    renderPacks();
+  }
+
+  async function editarNombrePack(packId) {
+    const p = DB.packs.find(x => x.id === packId);
+    if (!p) return;
+    const nombre = prompt('Nuevo nombre del Pack:', p.nombre);
+    if (!nombre || nombre === p.nombre) return;
+    p.nombre = nombre;
+    await saveDB();
+    renderPacks();
+  }
+
+  async function eliminarPack(packId) {
+    if (!confirm('¿Eliminar este pack por completo?')) return;
+    DB.packs = DB.packs.filter(p => p.id !== packId);
+    await saveDB();
+    renderPacks();
+  }
+
+  async function eliminarRutinaPack(packId, rid) {
+    if (!confirm('¿Quitar esta rutina del pack?')) return;
+    const p = DB.packs.find(x => x.id === packId);
+    if (p) {
+      p.rutinas = p.rutinas.filter(x => x.id !== rid);
+      await saveDB();
+      renderPacks();
+    }
+  }
+
+  function asignarPackModal(packId) {
+    const p = DB.packs.find(x => x.id === packId);
+    if (!p || p.rutinas.length === 0) {
+      alert('Este pack no tiene rutinas para asignar.'); return;
+    }
+    
+    if (DB.usuarios.length === 0) {
+      alert('No hay clientes registrados.'); return;
+    }
+
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-asignar-pack" style="display:flex; z-index:9999;">
+        <div class="modal" style="max-width:400px; width:100%;">
+          <h2>Asignar Pack: ${p.nombre}</h2>
+          <p style="font-size:13px; color:var(--text-secondary);">Selecciona el cliente al que se le copiarán las ${p.rutinas.length} rutinas de este pack.</p>
+          <select id="select-asignar-pack-usuario" style="width:100%; margin:15px 0; padding:10px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--border);">
+            ${DB.usuarios.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('')}
+          </select>
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button class="btn-ghost" onclick="document.getElementById('modal-asignar-pack').remove()">Cancelar</button>
+            <button class="btn-primary" onclick="confirmarAsignacionPack('${packId}')">Asignar</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  async function confirmarAsignacionPack(packId) {
+    const p = DB.packs.find(x => x.id === packId);
+    const uid = document.getElementById('select-asignar-pack-usuario').value;
+    if (!p || !uid) return;
+    
+    const now = new Date().toISOString();
+    
+    p.rutinas.forEach(rt => {
+      const newRt = JSON.parse(JSON.stringify(rt));
+      newRt.id = genId();
+      newRt.usuarioId = uid;
+      newRt.creado = now;
+      if (Array.isArray(newRt.ejercicios)) {
+        newRt.ejercicios.forEach(ej => {
+          if (!ej.imagen) ej.imagen = getImagenEjercicio(ej);
+        });
+      }
+      DB.rutinas.push(newRt);
+    });
+    
+    await saveDB();
+    document.getElementById('modal-asignar-pack').remove();
+    showToast('Pack asignado correctamente al cliente');
+    
+    // Limpiar filtros
+    const fMes = document.getElementById('filter-r-mes'); if (fMes) fMes.value = '';
+    const fAnio = document.getElementById('filter-r-anio'); if (fAnio) fAnio.value = '';
+    const fTipo = document.getElementById('filter-r-tipo'); if (fTipo) fTipo.value = '';
+
+    // Switch to clients view and select that client
+    document.getElementById('select-usuario').value = uid;
+    const destUser = DB.usuarios.find(u => u.id === uid);
+    if (destUser && typeof setActiveUser === 'function') {
+      await setActiveUser(destUser);
+    }
+    onUsuarioChange();
+    switchTab('clientes');
+  }
+
+  // --- FIN PACKS LOGIC ---
+  
+  // --- LIBRARY EDIT LOGIC ---
+  const customStr = localStorage.getItem('romeo_custom_exercises');
+  if (customStr) {
+    const parsed = JSON.parse(customStr);
+    parsed.forEach(ej => {
+      if (!BIBLIOTECA[ej.grupo]) BIBLIOTECA[ej.grupo] = [];
+      const existingIdx = BIBLIOTECA[ej.grupo].findIndex(x => x.nombre.toLowerCase() === ej.nombre.toLowerCase());
+      const newEjData = {
+          nombre: ej.nombre,
+          imagen: ej.imagen || '1.jpeg',
+          reps: ej.reps || '4 × 10',
+          notas: ej.notas || ''
+      };
+      if (existingIdx >= 0) BIBLIOTECA[ej.grupo][existingIdx] = newEjData;
+      else BIBLIOTECA[ej.grupo].push(newEjData);
+    });
+  }
+
+  let editingExerciseOriginalName = null;
+  let editingExerciseOriginalGroup = null;
+
+  // Override renderBibliotecaGrid to add edit button
+  const _oldRenderBibliotecaGrid = renderBibliotecaGrid;
+  renderBibliotecaGrid = function(exercises) {
+    const grid = document.getElementById('lib-exercises-grid');
+    if (exercises.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:40px;">No hay ejercicios que coincidan.</div>`;
+      return;
+    }
+    
+    grid.innerHTML = exercises.map(ej => {
+      let grupo = document.getElementById('lib-current-category') ? document.getElementById('lib-current-category').textContent : '';
+      for (const [g, list] of Object.entries(BIBLIOTECA)) {
+        if (list.some(x => x.nombre === ej.nombre)) {
+          grupo = g; break;
+        }
+      }
+      const imgPath = ej.imagen ? (ej.imagen.startsWith('data:image') ? ej.imagen : `img/${ej.imagen}`) : 'img/1.jpeg';
+      return `
+        <div class="lib-card" onclick="seleccionarEjercicioBiblioteca('${grupo}', '${ej.nombre}')">
+          <div class="lib-img-container">
+            <img class="lib-img" src="${imgPath}" alt="${ej.nombre}" />
+          </div>
+          <div class="lib-card-body">
+            <div class="lib-card-name">${ej.nombre}</div>
+            <div class="lib-card-reps">👉 Series y reps: ${ej.reps}</div>
+            <div class="lib-card-notes">${ej.notas || ej.notes || 'Sin notas especiales.'}</div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <button type="button" class="lib-card-btn" style="flex:1;">＋ Agregar</button>
+              <button type="button" class="btn-ghost" style="padding:6px; background:rgba(255,255,255,0.05);" onclick="event.stopPropagation(); editarEjercicioBiblioteca('${grupo}', '${ej.nombre}')">✏️</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  function editarEjercicioBiblioteca(grupo, nombre) {
+    editingExerciseOriginalName = nombre;
+    editingExerciseOriginalGroup = grupo;
+    
+    const ej = BIBLIOTECA[grupo].find(x => x.nombre === nombre);
+    if (!ej) return;
+
+    if (typeof populateNewExerciseGroups === 'function') populateNewExerciseGroups();
+
+    document.getElementById('new-ej-grupo').value = grupo;
+    document.getElementById('new-ej-nombre').value = ej.nombre;
+    document.getElementById('new-ej-reps').value = ej.reps || '4 × 10';
+    document.getElementById('new-ej-notas').value = ej.notas || '';
+    
+    document.querySelector('#modal-nuevo-ejercicio h2').textContent = 'Editar Ejercicio';
+    
+    openModal('modal-nuevo-ejercicio');
+  }
+
+  // Hook into original modal open to reset state
+  const _oldAbrirModalNuevoEjercicio = abrirModalNuevoEjercicio;
+  abrirModalNuevoEjercicio = function() {
+    editingExerciseOriginalName = null;
+    editingExerciseOriginalGroup = null;
+    document.querySelector('#modal-nuevo-ejercicio h2').textContent = 'Crear Nuevo Ejercicio';
+    _oldAbrirModalNuevoEjercicio();
+  };
+
+  // Override guardarNuevoEjercicio
+  guardarNuevoEjercicio = async function() {
+    const grupo = document.getElementById('new-ej-grupo').value;
+    const nombre = document.getElementById('new-ej-nombre').value.trim();
+    const imgInput = document.getElementById('new-ej-imagen');
+    
+    if (!nombre) {
+      showToast('Por favor, ingresa el nombre del ejercicio', 'error');
+      return;
+    }
+
+    let imagen = '';
+    if (imgInput.files && imgInput.files.length > 0) {
+      imagen = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(imgInput.files[0]);
+      });
+    } else if (editingExerciseOriginalName) {
+       const orig = BIBLIOTECA[editingExerciseOriginalGroup].find(x => x.nombre === editingExerciseOriginalName);
+       if (orig) imagen = orig.imagen;
+    }
+
+    const reps = document.getElementById('new-ej-reps').value.trim();
+    const notas = document.getElementById('new-ej-notas').value.trim();
+    
+    const nuevoEj = { grupo, nombre, imagen, reps, notas };
+    
+    let customs = [];
+    try {
+      const saved = localStorage.getItem('romeo_custom_exercises');
+      if (saved) customs = JSON.parse(saved);
+    } catch(e) {}
+    
+    if (editingExerciseOriginalName) {
+      // Edit mode: remove original from customs
+      customs = customs.filter(x => !(x.nombre === editingExerciseOriginalName && x.grupo === editingExerciseOriginalGroup));
+      if (BIBLIOTECA[editingExerciseOriginalGroup]) {
+         const idx = BIBLIOTECA[editingExerciseOriginalGroup].findIndex(x => x.nombre === editingExerciseOriginalName);
+         if (idx >= 0) BIBLIOTECA[editingExerciseOriginalGroup].splice(idx, 1);
+      }
+    } else {
+      const existsInMain = BIBLIOTECA[grupo] && BIBLIOTECA[grupo].some(x => x.nombre.toLowerCase() === nombre.toLowerCase());
+      if (existsInMain) {
+        showToast('El ejercicio ya existe en la biblioteca', 'error');
+        return;
+      }
+    }
+    
+    customs.push(nuevoEj);
+    localStorage.setItem('romeo_custom_exercises', JSON.stringify(customs));
+    
+    if (!BIBLIOTECA[grupo]) BIBLIOTECA[grupo] = [];
+    BIBLIOTECA[grupo].push(nuevoEj);
+    
+    showToast(`✅ Ejercicio guardado: ${nombre}`);
+    closeModal('modal-nuevo-ejercicio');
+    
+    if (typeof filtrarEjerciciosBiblioteca === 'function') {
+      filtrarEjerciciosBiblioteca();
+    } else {
+      renderBibliotecaGrid(BIBLIOTECA[grupo] || []);
+    }
+  };
+  // --- FIN LIBRARY EDIT LOGIC ---
+</script>
+</body>
+</html>

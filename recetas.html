@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Romeo Personal Trainer — Nutrición y Recetas</title>
+  <meta name="description" content="Catálogo de recetas fitness con desglose de macronutrientes, calorías e ingredientes." />  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#00E5A0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Romeo PT" />
+  <link rel="apple-touch-icon" href="1.jpeg" />
+</head>
+<body>
+
+<div id="sidebar-container"></div>
+<main class="main-content">
+  <div id="topbar-container"></div>
+  <div class="page-body">
+
+    <div class="section-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h1>Nutrición y Recetas</h1>
+        <p class="section-subtitle">Planes alimenticios para maximizar resultados de tus clientes</p>
+      </div>
+      <button class="btn-primary" id="btn-nueva-receta" onclick="abrirModalNuevaReceta()" style="white-space:nowrap; flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva Receta
+      </button>
+    </div>
+
+    <!-- Macro Guide -->
+    <div class="macro-guide">
+      <div class="macro-guide-item">
+        <div class="mg-icon" style="background:rgba(255,60,172,0.1);border:1px solid rgba(255,60,172,0.2)">💪</div>
+        <div><div class="mg-title">Proteína</div><div class="mg-sub">1.6 – 2.2 g/kg de peso corporal</div></div>
+      </div>
+      <div class="macro-guide-item">
+        <div class="mg-icon" style="background:rgba(255,112,67,0.1);border:1px solid rgba(255,112,67,0.2)">⚡</div>
+        <div><div class="mg-title">Carbohidratos</div><div class="mg-sub">3 – 5 g/kg entrenamiento moderado</div></div>
+      </div>
+      <div class="macro-guide-item">
+        <div class="mg-icon" style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2)">🥑</div>
+        <div><div class="mg-title">Grasas Saludables</div><div class="mg-sub">25 – 35% del total calórico diario</div></div>
+      </div>
+      <div class="macro-guide-item">
+        <div class="mg-icon" style="background:rgba(43,134,197,0.1);border:1px solid rgba(43,134,197,0.2)">💧</div>
+        <div><div class="mg-title">Hidratación</div><div class="mg-sub">35 ml/kg + 500ml por hora de ejercicio</div></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="recetas-filter" id="recetas-filter-bar">
+      <button class="filter-btn active" data-cat="todas" onclick="filtrarRecetas('todas', this)">🍽️ Todas</button>
+      <button class="filter-btn" data-cat="proteina" onclick="filtrarRecetas('proteina', this)">💪 Alta Proteína</button>
+      <button class="filter-btn" data-cat="carbohidratos" onclick="filtrarRecetas('carbohidratos', this)">⚡ Pre-Entreno</button>
+      <button class="filter-btn" data-cat="recuperacion" onclick="filtrarRecetas('recuperacion', this)">🔄 Recuperación</button>
+      <button class="filter-btn" data-cat="snack" onclick="filtrarRecetas('snack', this)">🍎 Snacks</button>
+      <button class="filter-btn" data-cat="batidos" onclick="filtrarRecetas('batidos', this)">🥤 Batidos</button>
+    </div>
+
+    <div class="recetas-grid" id="recetas-grid"></div>
+
+    <!-- Timing Guide -->
+    <div style="margin-top:40px">
+      <h2 style="font-size:18px;font-weight:800;margin-bottom:18px;background:var(--grad-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">📚 Timing Nutricional Óptimo</h2>
+      <div class="timing-grid">
+        <div class="timing-card">
+          <div class="timing-badge" style="background:rgba(255,112,67,0.1);color:var(--orange);border:1px solid rgba(255,112,67,0.2)">⏰ 2-3h antes</div>
+          <h3>Pre-Entreno</h3>
+          <p>Comida completa con carbos lentos, proteína moderada y poca grasa. Ej: avena con frutas y proteína.</p>
+          <div class="timing-macros"><span>🍞 Carbos: 60%</span><span>🥩 Proteína: 30%</span><span>🥑 Grasa: 10%</span></div>
+        </div>
+        <div class="timing-card">
+          <div class="timing-badge" style="background:rgba(255,60,172,0.1);color:var(--pink);border:1px solid rgba(255,60,172,0.2)">⚡ 30-60min antes</div>
+          <h3>Snack Pre-Entreno</h3>
+          <p>Carbos simples de rápida digestión para energía inmediata. Ej: banana, dátiles o batido de frutas.</p>
+          <div class="timing-macros"><span>🍌 Carbos: 80%</span><span>🥩 Proteína: 15%</span><span>🥑 Grasa: 5%</span></div>
+        </div>
+        <div class="timing-card">
+          <div class="timing-badge" style="background:rgba(0,229,160,0.1);color:var(--green);border:1px solid rgba(0,229,160,0.2)">✅ 30-60min después</div>
+          <h3>Post-Entreno</h3>
+          <p>Ventana anabólica: proteína rápida + carbos para reponer glucógeno muscular.</p>
+          <div class="timing-macros"><span>🍞 Carbos: 50%</span><span>🥩 Proteína: 40%</span><span>🥑 Grasa: 10%</span></div>
+        </div>
+        <div class="timing-card">
+          <div class="timing-badge" style="background:rgba(43,134,197,0.1);color:var(--blue);border:1px solid rgba(43,134,197,0.2)">🌙 Antes de dormir</div>
+          <h3>Recuperación Nocturna</h3>
+          <p>Proteína de digestión lenta (caseína) para síntesis muscular durante el sueño. Ej: yogur griego o requesón.</p>
+          <div class="timing-macros"><span>🍞 Carbos: 20%</span><span>🥩 Proteína: 60%</span><span>🥑 Grasa: 20%</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Modal Detalle Receta -->
+<div class="modal-overlay" id="modal-receta">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-receta-title">Receta</h2>
+      <button class="modal-close" onclick="closeModal('modal-receta')">✕</button>
+    </div>
+    <div id="modal-receta-content" style="padding:20px 24px"></div>
+  </div>
+</div>
+
+<!-- Floating Cart Button -->
+<div class="cart-floating-btn" id="cart-floating-trigger" onclick="abrirModalCarrito()">
+  <span class="cart-icon">🛒</span>
+  <span class="cart-badge" id="cart-count">0</span>
+</div>
+
+<!-- Modal Carrito -->
+<div class="modal-overlay" id="modal-carrito">
+  <div class="modal modal-lg" style="max-width: 600px;">
+    <div class="modal-header">
+      <h2>🛒 Recetas Seleccionadas</h2>
+      <button class="modal-close" onclick="closeModal('modal-carrito')">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 20px 24px;">
+      <div id="cart-items-list" class="cart-items-list">
+        <!-- Populated dynamically -->
+      </div>
+      
+      <div class="cart-summary-section" id="cart-summary">
+        <!-- Populated dynamically -->
+      </div>
+      
+      <div style="margin-top: 20px;">
+        <label style="display: block; font-size: 11px; font-weight: 700; margin-bottom: 8px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Enviar a Cliente:</label>
+        <div class="select-box" style="width: 100%; margin-bottom: 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; margin-left: 10px; z-index: 2; position: absolute; pointer-events: none;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          <select id="sel-cart-cliente" style="padding-left: 36px; width: 100%;">
+            <option value="">-- Compartir sin número (WhatsApp Web) --</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="modal-footer" style="padding: 10px 0 0 0; border-top: none; display: flex; gap: 10px;">
+        <button class="btn-secondary" onclick="closeModal('modal-carrito')" style="flex: 1; height: 42px;">Cerrar</button>
+        <button class="btn-primary" onclick="enviarPlanWhatsApp()" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 8px; height: 42px; background: #25D366; border-color: #25D366; color: white;">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.1.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg>
+          Enviar por WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Receta -->
+<div class="modal-overlay" id="modal-nueva-receta">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h2>✨ Nueva Receta</h2>
+      <button class="modal-close" onclick="closeModal('modal-nueva-receta')">✕</button>
+    </div>
+    <div style="padding:20px 24px; overflow-y:auto; max-height:78vh;">
+
+      <!-- Nombre -->
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Nombre de la Receta *</label>
+        <input type="text" id="nr-nombre" class="form-input" placeholder="Ej: Pollo a la plancha con quinoa" maxlength="60" />
+      </div>
+
+      <!-- Emoji + Descripción -->
+      <div style="display:grid; grid-template-columns:90px 1fr; gap:10px; margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">Emoji</label>
+          <input type="text" id="nr-emoji" class="form-input" placeholder="🍽️" maxlength="4" style="text-align:center; font-size:22px; padding:8px;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción corta *</label>
+          <input type="text" id="nr-desc" class="form-input" placeholder="Descripción breve de la receta" maxlength="120" />
+        </div>
+      </div>
+
+      <!-- Categoría -->
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Categoría *</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="select-box" style="flex:1; min-width:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; flex-shrink:0;"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <select id="nr-categoria" style="width:100%;" onchange="handleCatChange()">
+              <option value="proteina">💪 Alta Proteína</option>
+              <option value="carbohidratos">⚡ Pre-Entreno</option>
+              <option value="recuperacion">🔄 Recuperación</option>
+              <option value="snack">🍎 Snacks</option>
+              <option value="batidos">🥤 Batidos</option>
+              <option value="__nueva__">➕ Crear nueva categoría…</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nueva Categoría (hidden by default) -->
+      <div id="nueva-cat-panel" style="display:none; margin-bottom:14px; background:rgba(255,60,172,0.06); border:1px solid rgba(255,60,172,0.2); border-radius:var(--r-sm); padding:14px;">
+        <label class="form-label" style="margin-bottom:6px;">Nombre de la nueva categoría *</label>
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:8px;">
+          <input type="text" id="nr-cat-emoji" class="form-input" placeholder="🥦" maxlength="4" style="text-align:center; font-size:18px;"/>
+          <input type="text" id="nr-cat-nombre" class="form-input" placeholder="Ej: Vegano, Keto, Desayunos…" maxlength="30" />
+        </div>
+        <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">💡 Esta categoría se guardará y podrás filtrar recetas por ella.</p>
+      </div>
+
+      <!-- Tag visible -->
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Etiqueta visible en la tarjeta</label>
+        <input type="text" id="nr-tag" class="form-input" placeholder="Ej: Alta Proteína, Keto, etc." maxlength="25" />
+      </div>
+
+      <!-- Macros -->
+      <label class="form-label" style="margin-bottom:8px;">Macronutrientes</label>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:16px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Proteína (g)</label>
+          <input type="number" id="nr-proteina" class="form-input" placeholder="30" min="0" max="999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Carbos (g)</label>
+          <input type="number" id="nr-carbs" class="form-input" placeholder="45" min="0" max="999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Grasas (g)</label>
+          <input type="number" id="nr-grasas" class="form-input" placeholder="12" min="0" max="999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Calorías</label>
+          <input type="number" id="nr-kcal" class="form-input" placeholder="380" min="0" max="9999" />
+        </div>
+      </div>
+
+      <!-- Ingredientes -->
+      <div class="form-group" style="margin-bottom:6px;">
+        <label class="form-label">Ingredientes (uno por línea)</label>
+        <textarea id="nr-ingredientes" class="form-input" rows="4" placeholder="150g pechuga de pollo&#10;1 taza quinoa cocida&#10;Aceite de oliva, sal y pimienta" style="resize:vertical; font-size:13px; line-height:1.5;"></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex; gap:10px; margin-top:18px;">
+        <button class="btn-secondary" onclick="closeModal('modal-nueva-receta')" style="flex:1;">Cancelar</button>
+        <button class="btn-primary" onclick="guardarNuevaReceta()" style="flex:2; justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar Receta
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="persist.js"></script><script src="shared.js"></script>
+<script>
+  document.getElementById('sidebar-container').innerHTML = buildSidebar('recetas');
+  document.getElementById('topbar-container').innerHTML = buildTopbar('Nutrición y Recetas');
+  document.getElementById('toast-container').innerHTML = buildToast();
+
+  // ===================== CUSTOM RECIPES (localStorage) =====================
+  let RECETAS_CUSTOM = [];
+  let CATS_CUSTOM = []; // [{id, nombre, emoji}]
+
+  // Merged array (built-in + custom)
+  let ALL_RECETAS = [];
+
+  async function loadCustomRecetas() {
+    try {
+      const r = localStorage.getItem('romeo_recetas_custom');
+      if (r) RECETAS_CUSTOM = JSON.parse(r);
+      else {
+        const storedR = await PersistDB.get('romeo_recetas_custom');
+        if (storedR && Array.isArray(storedR)) RECETAS_CUSTOM = storedR;
+      }
+    } catch(e) { RECETAS_CUSTOM = []; }
+    try {
+      const c = localStorage.getItem('romeo_cats_custom');
+      if (c) CATS_CUSTOM = JSON.parse(c);
+      else {
+        const storedC = await PersistDB.get('romeo_cats_custom');
+        if (storedC && Array.isArray(storedC)) CATS_CUSTOM = storedC;
+      }
+    } catch(e) { CATS_CUSTOM = []; }
+    // Merge
+    ALL_RECETAS = [...RECETAS, ...RECETAS_CUSTOM];
+    // Add custom category filter buttons
+    rebuildFilterBar();
+    // Populate category select in modal
+    populateCatSelect();
+  }
+
+  async function saveCustomRecetas() {
+    try {
+      localStorage.setItem('romeo_recetas_custom', JSON.stringify(RECETAS_CUSTOM));
+      localStorage.setItem('romeo_cats_custom', JSON.stringify(CATS_CUSTOM));
+    } catch(e){}
+    ALL_RECETAS = [...RECETAS, ...RECETAS_CUSTOM];
+    await PersistDB.set('romeo_recetas_custom', RECETAS_CUSTOM);
+    await PersistDB.set('romeo_cats_custom', CATS_CUSTOM);
+  }
+
+  // ---- Filter bar rebuild ----
+  const BUILTIN_CATS = [
+    { id:'todas',        label:'🍽️ Todas' },
+    { id:'proteina',     label:'💪 Alta Proteína' },
+    { id:'carbohidratos',label:'⚡ Pre-Entreno' },
+    { id:'recuperacion', label:'🔄 Recuperación' },
+    { id:'snack',        label:'🍎 Snacks' },
+    { id:'batidos',      label:'🥤 Batidos' },
+  ];
+
+  function rebuildFilterBar() {
+    const bar = document.getElementById('recetas-filter-bar');
+    if (!bar) return;
+    // Keep built-in buttons
+    const builtinIds = BUILTIN_CATS.map(c => c.id);
+    // Remove old custom buttons
+    bar.querySelectorAll('[data-custom]').forEach(b => b.remove());
+    // Add custom category buttons if not already covered
+    CATS_CUSTOM.forEach(cat => {
+      if (!builtinIds.includes(cat.id)) {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.dataset.cat = cat.id;
+        btn.dataset.custom = '1';
+        btn.textContent = `${cat.emoji} ${cat.nombre}`;
+        btn.onclick = function() { filtrarRecetas(cat.id, btn); };
+        bar.appendChild(btn);
+      }
+    });
+    // Restore active state
+    bar.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.cat === activeCat);
+    });
+  }
+
+  // ---- Category select in modal ----
+  function populateCatSelect() {
+    const sel = document.getElementById('nr-categoria');
+    if (!sel) return;
+    // Remove old custom options (before the "nueva" option)
+    sel.querySelectorAll('[data-custom]').forEach(o => o.remove());
+    // Insert custom cats before last option (crear nueva)
+    const lastOpt = sel.querySelector('option[value="__nueva__"]');
+    CATS_CUSTOM.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = `${cat.emoji} ${cat.nombre}`;
+      opt.dataset.custom = '1';
+      sel.insertBefore(opt, lastOpt);
+    });
+  }
+
+  // ---- Modal nueva receta ----
+  function abrirModalNuevaReceta() {
+    // Reset fields
+    ['nr-nombre','nr-emoji','nr-desc','nr-tag','nr-proteina','nr-carbs','nr-grasas','nr-kcal','nr-ingredientes','nr-cat-emoji','nr-cat-nombre'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('nr-emoji').value = '🍽️';
+    document.getElementById('nr-categoria').value = 'proteina';
+    document.getElementById('nueva-cat-panel').style.display = 'none';
+    populateCatSelect();
+    openModal('modal-nueva-receta');
+  }
+
+  function handleCatChange() {
+    const sel = document.getElementById('nr-categoria');
+    const panel = document.getElementById('nueva-cat-panel');
+    panel.style.display = sel.value === '__nueva__' ? 'block' : 'none';
+  }
+
+  function guardarNuevaReceta() {
+    const nombre = document.getElementById('nr-nombre').value.trim();
+    const emoji  = document.getElementById('nr-emoji').value.trim() || '🍽️';
+    const desc   = document.getElementById('nr-desc').value.trim();
+    const tag    = document.getElementById('nr-tag').value.trim();
+    const prot   = document.getElementById('nr-proteina').value.trim();
+    const carbs  = document.getElementById('nr-carbs').value.trim();
+    const grasas = document.getElementById('nr-grasas').value.trim();
+    const kcal   = document.getElementById('nr-kcal').value.trim();
+    const ings   = document.getElementById('nr-ingredientes').value.trim();
+
+    if (!nombre || !desc) {
+      showToast('El nombre y la descripción son obligatorios', 'error');
+      return;
+    }
+
+    let catId = document.getElementById('nr-categoria').value;
+    let catTag = tag;
+
+    // Handle new custom category
+    if (catId === '__nueva__') {
+      const catEmoji = document.getElementById('nr-cat-emoji').value.trim() || '📂';
+      const catNombre = document.getElementById('nr-cat-nombre').value.trim();
+      if (!catNombre) {
+        showToast('Escribe el nombre de la nueva categoría', 'error');
+        return;
+      }
+      catId = catNombre.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      if (!catId) catId = 'cat_' + Date.now();
+      // Check not duplicate
+      if (!CATS_CUSTOM.find(c => c.id === catId)) {
+        CATS_CUSTOM.push({ id: catId, nombre: catNombre, emoji: catEmoji });
+      }
+      if (!catTag) catTag = `${catEmoji} ${catNombre}`;
+    }
+
+    // Determine tag from built-in cat if not set
+    if (!catTag) {
+      const builtinLabels = { proteina:'Alta Proteína', carbohidratos:'Pre-Entreno', recuperacion:'Recuperación', snack:'Snack', batidos:'Batidos' };
+      catTag = builtinLabels[catId] || catId;
+    }
+
+    // Generate unique ID (above built-in range)
+    const maxId = ALL_RECETAS.reduce((m, r) => Math.max(m, r.id), 0);
+    const newId = maxId + 1;
+
+    const receta = {
+      id: newId,
+      nombre,
+      categoria: catId,
+      emoji,
+      desc,
+      proteina: prot ? `${prot}g` : '—',
+      carbs:    carbs ? `${carbs}g` : '—',
+      grasas:   grasas ? `${grasas}g` : '—',
+      kcal:     kcal || '—',
+      tag:      catTag,
+      custom:   true
+    };
+
+    // Save ingredients
+    if (ings) {
+      INGREDIENTES[newId] = ings.split('\n').map(l => l.trim()).filter(Boolean);
+    }
+
+    RECETAS_CUSTOM.push(receta);
+    saveCustomRecetas();
+    rebuildFilterBar();
+
+    // Switch to the new category filter
+    activeCat = catId;
+    const lista = ALL_RECETAS.filter(r => r.categoria === catId);
+    renderGrid(lista);
+    // Update filter active state
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === catId));
+
+    closeModal('modal-nueva-receta');
+    showToast(`✅ Receta "${nombre}" guardada con éxito`);
+  }
+
+  // Cart state initialization
+  let cart = [];
+  function loadCart() {
+    try {
+      const data = localStorage.getItem('romeo_cart');
+      if (data) cart = JSON.parse(data);
+    } catch(e) {}
+    updateCartBadge();
+  }
+  function saveCart() {
+    localStorage.setItem('romeo_cart', JSON.stringify(cart));
+    updateCartBadge();
+  }
+  function updateCartBadge() {
+    const el = document.getElementById('cart-count');
+    if (el) el.textContent = cart.length;
+    const trigger = document.getElementById('cart-floating-trigger');
+    if (trigger) {
+      trigger.style.display = cart.length > 0 ? 'flex' : 'none';
+    }
+  }
+
+  const INGREDIENTES = {
+    1:['150g arroz integral cocido','180g pechuga de pollo a la plancha','1 taza brócoli al vapor','½ aguacate','Sal, pimienta, limón al gusto'],
+    2:['1 scoop proteína (vainilla)','1 banana','250ml leche de almendras','2 cdas mantequilla de maní','Hielo'],
+    3:['80g avena en hojuelas','200ml leche','1 banana en rodajas','1 cda miel','30g nueces mixtas','Canela'],
+    4:['2 rebanadas pan integral','3 huevos','½ aguacate maduro','Sal, pimienta','Chile flakes opcional'],
+    5:['180g filete salmón','2 tazas espinacas','1 zanahoria','1 camote pequeño','Aceite oliva, sal, limón'],
+    6:['2 tazas espinaca','1 taza piña','1 cm jengibre','1 scoop proteína','200ml leche de coco'],
+    7:['2 huevos duros','30g almendras tostadas sin sal','Sal de mar'],
+    8:['200g yogur griego (0% azúcar)','½ taza arándanos','¼ taza fresas','2 cdas granola casera'],
+    9:['1 lata atún en agua (180g)','½ taza garbanzos cocidos','1 tomate','½ pepino','Limón, aceite oliva extra virgen'],
+    10:['200g pasta integral','150g carne molida de pavo','1 taza salsa tomate casera','½ cebolla','2 dientes ajo'],
+    11:['300ml caldo res desgrasado','1 zanahoria','2 tallos apio','100g res magra','Sal, pimienta, cilantro'],
+    12:['1 manzana mediana','2 cdas mantequilla de maní natural'],
+    13:['1 scoop proteína de chocolate','1 banana madura','250ml leche de almendras','1½ cdas mantequilla de maní','1 cdta semillas de chía','Hielo'],
+    14:['1½ tazas espinaca fresca','½ manzana verde','½ taza piña picada','200ml agua de coco','1 cm jengibre fresco'],
+    15:['½ taza avena en hojuelas','1 taza fresas frescas','250ml leche descremada o vegetal','1 cda miel de abejas pura','Extracto de vainilla'],
+    16:['½ taza arándanos frescos o congelados','150g yogur griego descremado','200ml leche de almendras','1 cda semillas de linaza molida'],
+    17:['½ aguacate meduro','200ml leche de coco light','1 taza espinacas frescas','Stevia al gusto','Hielo'],
+    18:['1 manzana verde en trozos','3 cdas avena en hojuelas','½ taza yogur griego','1 cdta canela en polvo','Agua y hielo'],
+    19:['½ piña madura picada','½ mango maduro','½ taza yogur griego natural','100ml jugo de naranja natural'],
+    20:['1 toronja rosada (jugo)','1 cm jengibre fresco rallado','2 tallos de apio','1 rodaja de piña'],
+    21:['1 taza café expreso frío','1 scoop proteína de chocolate','150ml leche de almendras','Hielo al gusto'],
+    22:['2 tazas sandía picada sin semillas','5 hojas de menta fresca','150ml agua de coco fresca'],
+    23:['½ taza avena en hojuelas','1 cda mantequilla de almendras','250ml leche descremada','1 cda miel de abejas'],
+    24:['1 taza espinaca fresca','1 kiwi pelado','½ manzana verde','1 cdta semillas de chía','Agua fría'],
+    25:['1 scoop proteína de vainilla','4 nueces de nogal picadas','1 plátano','200ml leche descremada'],
+    26:['3 dátiles sin hueso','4 cdas avena en hojuelas','250ml leche de almendras','½ cdta canela en polvo'],
+    27:['2 tallos de apio','1 pepino mediano','Zumo de 1 limón','½ manzana verde','Agua y hielo'],
+    28:['1 taza papaya picada','1 cda semillas de linaza molida','150g yogur griego natural','Hielo'],
+    29:['1 zanahoria mediana picada','Zumo de 2 naranjas','1 cm jengibre fresco','100ml agua de coco'],
+    30:['1½ tazas melón picado','Zumo de ½ limón','150ml agua de coco','Hojas de menta para decorar'],
+    31:['1 taza fresas frescas','100g requesón bajo en grasa','150ml leche descremada o almendras','Stevia al gusto'],
+    32:['1 cdta espirulina en polvo','1 taza espinaca fresca','1 plátano','200ml leche de almendras o coco'],
+    33:['150ml leche de coco','30g almendras enteras','1 scoop proteína de vainilla','Canela en polvo','Hielo'],
+    34:['1 melocotón maduro picado','150g yogur griego natural','100ml leche descremada','Esencia de vainilla'],
+    35:['1 taza té verde frío','Zumo de ½ limón','5 hojas de menta fresca','1 cdta miel de abejas'],
+    36:['1 cda semillas de chía','½ taza frutos rojos (fresas, arándanos)','200ml leche de avena','Hielo'],
+    37:['1 cdta té matcha en polvo','1 plátano maduro','1 taza espinacas','200ml leche de almendras'],
+    38:['1 pepino pelado y picado','8 hojas de menta fresca','Zumo de ½ limón','200ml agua de coco'],
+    39:['1 scoop proteína de arveja','250ml leche de soja sin azúcar','1 plátano','1 cda cacao puro sin azúcar'],
+    40:['½ taza puré de calabaza natural','3 cdas avena en hojuelas','200ml leche de almendras','Mezcla de canela, jengibre y nuez moscada'],
+    41:['3 higos secos o frescos','5 nueces picadas','150g yogur natural descremado','100ml leche descremada'],
+    42:['½ taza avena en hojuelas','1 cda cacao puro en polvo','250ml leche descremada o vegetal','Edulcorante al gusto']
+  };
+
+  let activeCat = 'todas';
+  function filtrarRecetas(cat, btn) {
+    activeCat = cat;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const lista = cat==='todas' ? ALL_RECETAS : ALL_RECETAS.filter(r=>r.categoria===cat);
+    renderGrid(lista);
+  }
+
+  function renderGrid(lista) {
+    document.getElementById('recetas-grid').innerHTML = lista.map(r=> {
+      const inCart = cart.includes(r.id);
+      return `
+      <div class="receta-card" onclick="verReceta(${r.id})">
+        <div class="receta-img" style="background:${getCatGradient(r.categoria)}">
+          <span style="position:relative;z-index:1;font-size:56px">${r.emoji}</span>
+          <span class="receta-category-tag">${r.tag}</span>
+        </div>
+        <div class="receta-body">
+          <div class="receta-name">${r.nombre}</div>
+          <div class="receta-desc">${r.desc}</div>
+          <div class="receta-macros" style="margin-bottom: 10px;">
+            <div class="macro-chip macro-p"><div class="m-val">${r.proteina}</div><div class="m-lbl">Proteína</div></div>
+            <div class="macro-chip macro-c"><div class="m-val">${r.carbs}</div><div class="m-lbl">Carbos</div></div>
+            <div class="macro-chip macro-g"><div class="m-val">${r.grasas}</div><div class="m-lbl">Grasas</div></div>
+            <div class="macro-chip macro-k"><div class="m-val">${r.kcal}</div><div class="m-lbl">kcal</div></div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn-primary" onclick="event.stopPropagation(); registrarConsumo(${r.id})" style="flex:1; padding:6px; font-size:11px; display:flex; align-items:center; justify-content:center; gap:4px; height: 30px;">
+              🥤 Consumir
+            </button>
+            <button type="button" class="${inCart ? 'btn-primary' : 'btn-secondary'} btn-cart-toggle" onclick="event.stopPropagation(); toggleCart(${r.id})" style="padding:6px; width:36px; height: 30px; display:flex; align-items:center; justify-content:center; font-size:14px; background:${inCart ? 'var(--pink)' : 'rgba(255,255,255,0.05)'}; border:${inCart ? 'none' : '1px solid var(--border)'}; border-radius:var(--r-xs);" title="${inCart ? 'Quitar del carrito' : 'Agregar al carrito'}">
+              ${inCart ? '✅' : '🛒'}
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function verReceta(id) {
+    const r = ALL_RECETAS.find(x=>x.id===id); if (!r) return;
+    document.getElementById('modal-receta-title').textContent = r.emoji + ' ' + r.nombre;
+    const ings = INGREDIENTES[id] || [];
+    const inCart = cart.includes(r.id);
+    document.getElementById('modal-receta-content').innerHTML = `
+      <div style="background:${getCatGradient(r.categoria)};border-radius:var(--r-sm);padding:20px;text-align:center;margin-bottom:20px">
+        <div style="font-size:64px;margin-bottom:8px">${r.emoji}</div>
+        <span style="background:rgba(0,0,0,0.4);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:white">${r.tag}</span>
+      </div>
+      <div class="receta-macros" style="margin-bottom:20px">
+        <div class="macro-chip macro-p" style="padding:12px"><div class="m-val" style="font-size:18px">${r.proteina}</div><div class="m-lbl">Proteína</div></div>
+        <div class="macro-chip macro-c" style="padding:12px"><div class="m-val" style="font-size:18px">${r.carbs}</div><div class="m-lbl">Carbohidratos</div></div>
+        <div class="macro-chip macro-g" style="padding:12px"><div class="m-val" style="font-size:18px">${r.grasas}</div><div class="m-lbl">Grasas</div></div>
+        <div class="macro-chip macro-k" style="padding:12px"><div class="m-val" style="font-size:18px">${r.kcal}</div><div class="m-lbl">Calorías</div></div>
+      </div>
+      <h3 style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🛒 Ingredientes</h3>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:20px">
+        ${ings.map(i=>`<li style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 10px;background:var(--bg-surface);border-radius:var(--r-xs);border:1px solid var(--border)"><span style="color:var(--green);font-weight:700">✓</span> ${i}</li>`).join('')}
+      </ul>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-primary" onclick="registrarConsumo(${r.id}); closeModal('modal-receta')" style="flex:1; padding:10px; display:flex; align-items:center; justify-content:center; gap:6px; height: 42px;">
+          🥤 Consumir plato
+        </button>
+        <button type="button" class="${inCart ? 'btn-primary' : 'btn-secondary'}" onclick="toggleCart(${r.id}); verReceta(${r.id}); event.stopPropagation();" style="width: 50px; display:flex; align-items:center; justify-content:center; font-size:18px; background:${inCart ? 'var(--pink)' : 'rgba(255,255,255,0.05)'}; border:${inCart ? 'none' : '1px solid var(--border)'}; border-radius:var(--r-sm); height: 42px;" title="${inCart ? 'Quitar del carrito' : 'Agregar al carrito'}">
+          ${inCart ? '✅' : '🛒'}
+        </button>
+      </div>`;
+    openModal('modal-receta');
+  }
+
+  function registrarConsumo(id) {
+    const r = ALL_RECETAS.find(x => x.id === id);
+    if (!r) return;
+    registrarConsumoReceta(r.kcal, r.proteina, r.carbs, r.grasas);
+    showToast(`🥤 Registrado: ${r.nombre} (+${r.kcal} kcal)`);
+  }
+
+  function toggleCart(id) {
+    const idx = cart.indexOf(id);
+    if (idx === -1) {
+      cart.push(id);
+      showToast('🛒 Receta agregada al carrito');
+    } else {
+      cart.splice(idx, 1);
+      showToast('🗑️ Receta eliminada del carrito', 'error');
+    }
+    saveCart();
+    // Refresh active grid
+    const lista = activeCat==='todas' ? ALL_RECETAS : ALL_RECETAS.filter(r=>r.categoria===activeCat);
+    renderGrid(lista);
+    
+    // If the cart modal is active, refresh it
+    const modalCart = document.getElementById('modal-carrito');
+    if (modalCart && modalCart.classList.contains('active')) {
+      renderCarrito();
+    }
+  }
+
+  function abrirModalCarrito() {
+    renderCarrito();
+    
+    // Populate clients select
+    const sel = document.getElementById('sel-cart-cliente');
+    if (sel) {
+      sel.innerHTML = '<option value="">-- Compartir sin número (WhatsApp Web) --</option>';
+      if (window.DB && window.DB.usuarios) {
+        window.DB.usuarios.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = `${u.nombre} (${u.telefono || 'Sin teléfono'})`;
+          sel.appendChild(opt);
+        });
+      }
+      const activeUser = getActiveUser();
+      if (activeUser) {
+        sel.value = activeUser.id;
+      }
+    }
+    
+    openModal('modal-carrito');
+  }
+
+  function renderCarrito() {
+    const listContainer = document.getElementById('cart-items-list');
+    const summaryContainer = document.getElementById('cart-summary');
+    
+    if (cart.length === 0) {
+      listContainer.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:13px;">No has seleccionado recetas. Agrega algunas usando el icono 🛒.</div>`;
+      summaryContainer.style.display = 'none';
+      return;
+    }
+    
+    summaryContainer.style.display = 'block';
+    
+    let totalKcal = 0;
+    let totalP = 0;
+    let totalC = 0;
+    let totalG = 0;
+    
+    listContainer.innerHTML = cart.map(id => {
+      const r = ALL_RECETAS.find(x => x.id === id);
+      if (!r) return '';
+      
+      const kcalVal = parseInt(r.kcal) || 0;
+      const pVal = parseInt(r.proteina) || 0;
+      const cVal = parseInt(r.carbs) || 0;
+      const gVal = parseInt(r.grasas) || 0;
+      
+      totalKcal += kcalVal;
+      totalP += pVal;
+      totalC += cVal;
+      totalG += gVal;
+      
+      return `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <span class="cart-item-emoji">${r.emoji}</span>
+            <div>
+              <div class="cart-item-name">${r.nombre}</div>
+              <div class="cart-item-macros">${r.proteina} Proteína · ${r.carbs} Carbos · ${r.grasas} Grasas · ${r.kcal} kcal</div>
+            </div>
+          </div>
+          <button class="btn-remove-cart" onclick="toggleCart(${r.id})" title="Eliminar">🗑️</button>
+        </div>
+      `;
+    }).join('');
+    
+    summaryContainer.innerHTML = `
+      <div class="cart-summary-title">Resumen Nutricional Acumulado</div>
+      <div class="cart-summary-grid">
+        <div class="cart-summary-item" style="border-color:var(--purple);"><div class="cart-summary-val" style="color:var(--purple);">${totalKcal}</div><div class="cart-summary-lbl">kcal</div></div>
+        <div class="cart-summary-item" style="border-color:var(--pink);"><div class="cart-summary-val" style="color:var(--pink);">${totalP}g</div><div class="cart-summary-lbl">Proteína</div></div>
+        <div class="cart-summary-item" style="border-color:var(--orange);"><div class="cart-summary-val" style="color:var(--orange);">${totalC}g</div><div class="cart-summary-lbl">Carbos</div></div>
+        <div class="cart-summary-item" style="border-color:var(--green);"><div class="cart-summary-val" style="color:var(--green);">${totalG}g</div><div class="cart-summary-lbl">Grasas</div></div>
+      </div>
+    `;
+  }
+
+  function enviarPlanWhatsApp() {
+    if (cart.length === 0) {
+      showToast('Agrega al menos una receta al carrito', 'error');
+      return;
+    }
+    
+    const clientId = document.getElementById('sel-cart-cliente').value;
+    const client = clientId && window.DB ? window.DB.usuarios.find(x => x.id === clientId) : null;
+    
+    let totalKcal = 0;
+    let totalP = 0;
+    let totalC = 0;
+    let totalG = 0;
+    
+    let recipesText = '';
+    cart.forEach((id, i) => {
+      const r = ALL_RECETAS.find(x => x.id === id);
+      if (!r) return;
+      
+      totalKcal += parseInt(r.kcal) || 0;
+      totalP += parseInt(r.proteina) || 0;
+      totalC += parseInt(r.carbs) || 0;
+      totalG += parseInt(r.grasas) || 0;
+      
+      recipesText += `\n*${i + 1}. ${r.nombre}* ${r.emoji}\n`;
+      recipesText += `_${r.desc}_\n`;
+      recipesText += `- Proteínas: ${r.proteina} | Carbos: ${r.carbs} | Grasas: ${r.grasas}\n`;
+      recipesText += `- Calorías: ${r.kcal} kcal\n`;
+    });
+    
+    let msg = '';
+    if (client) {
+      msg += `Hola, *${client.nombre}*. `;
+    } else {
+      msg += `¡Hola! `;
+    }
+    msg += `Aquí tienes tu plan de recetas seleccionadas por tu entrenador *Romeo PT*: 💪🔥\n`;
+    msg += recipesText;
+    msg += `\n*RESUMEN DIARIO ACUMULADO:*`;
+    msg += `\n🔥 *Calorías Totales:* ${totalKcal} kcal`;
+    msg += `\n🍗 *Proteínas:* ${totalP}g`;
+    msg += `\n🥣 *Carbohidratos:* ${totalC}g`;
+    msg += `\n🥑 *Grasas:* ${totalG}g\n`;
+    msg += `\n¡A seguir con toda la disciplina! 🏋️‍♂️💯`;
+    
+    let phone = '';
+    if (client && client.telefono) {
+      phone = client.telefono.replace(/[^\d+]/g, '');
+    }
+    
+    const baseUrl = 'https://api.whatsapp.com/send';
+    const finalUrl = phone 
+      ? `${baseUrl}?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(msg)}`
+      : `${baseUrl}?text=${encodeURIComponent(msg)}`;
+      
+    window.open(finalUrl, '_blank');
+  }
+
+  // Load cart and render
+  loadCart();
+  loadCustomRecetas();
+  renderGrid(ALL_RECETAS);
+  window.addEventListener('romeo_db_loaded', function() {
+    if (typeof renderGrid === 'function') renderGrid(ALL_RECETAS);
+  });
+</script>
+</body>
+</html>

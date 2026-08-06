@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Romeo Personal Trainer — Clientes</title>
+  <meta name="description" content="Roster de clientes: métricas de ingresos, tasa de completitud, perfil completo y barra de progreso semanal." />  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#00E5A0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Romeo PT" />
+  <link rel="apple-touch-icon" href="1.jpeg" />
+</head>
+<body>
+
+<div id="sidebar-container"></div>
+<main class="main-content">
+  <div id="topbar-container"></div>
+  <div class="page-body">
+
+    <div class="section-header">
+      <h1>Roster de Clientes</h1>
+      <p class="section-subtitle">Gestiona perfiles, métricas y progreso de cada cliente</p>
+    </div>
+
+    <!-- Revenue Summary Bar -->
+    <div class="summary-bar" id="summary-bar">
+      <div class="summary-item"><div class="summary-val" id="sum-clientes">0</div><div class="summary-lbl">Clientes Totales</div></div>
+      <div class="summary-item"><div class="summary-val" id="sum-revenue">$0</div><div class="summary-lbl">Ingresos / Mes</div></div>
+      <div class="summary-item"><div class="summary-val" id="sum-completitud">0%</div><div class="summary-lbl">Completitud Promedio</div></div>
+      <div class="summary-item"><div class="summary-val" id="sum-rutinas">0</div><div class="summary-lbl">Rutinas Activas</div></div>
+    </div>
+
+    <!-- Status Filter chips -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-right:8px;">Estado:</span>
+      <button class="filter-btn active filter-status-btn" onclick="setFiltroEstado('Activo', this)">🟢 Activos</button>
+      <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Pausado', this)">🟡 Pausados</button>
+      <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Inactivo', this)">🔴 Inactivos</button>
+      <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Todos', this)">📁 Todos</button>
+    </div>
+
+    <!-- Objective Filter chips -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-right:8px;">Objetivo:</span>
+      <button class="filter-btn active filter-obj-btn" onclick="setFiltroObjetivo('', this)">Todos</button>
+      <button class="filter-btn filter-obj-btn" onclick="setFiltroObjetivo('Perder peso', this)">💧 Perder Peso</button>
+      <button class="filter-btn filter-obj-btn" onclick="setFiltroObjetivo('Ganar músculo', this)">💪 Ganar Músculo</button>
+      <button class="filter-btn filter-obj-btn" onclick="setFiltroObjetivo('Mantenimiento', this)">⚖️ Mantenimiento</button>
+      <button class="filter-btn filter-obj-btn" onclick="setFiltroObjetivo('Mejorar resistencia', this)">🏃 Resistencia</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Buscar cliente por nombre..." oninput="renderUsuarios()" />
+      </div>
+      <button class="btn-primary" onclick="abrirModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo Cliente
+      </button>
+    </div>
+
+    <div class="users-grid" id="usuarios-grid"></div>
+  </div>
+</main>
+
+<!-- Modal Usuario -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nuevo Cliente</h2>
+      <button class="modal-close" onclick="closeModal('modal-usuario')">✕</button>
+    </div>
+    <form id="form-usuario" onsubmit="guardarUsuario(event)">
+      <input type="hidden" id="uid" />
+      <div class="form-section-title">Datos Personales</div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Nombre Completo *</label><input type="text" id="u-nombre" placeholder="Juan García López" required /></div>
+        <div class="form-group"><label>Edad *</label><input type="number" id="u-edad" placeholder="25" min="10" max="100" required /></div>
+        <div class="form-group"><label>Género</label><select id="u-genero"><option>Masculino</option><option>Femenino</option><option>Otro</option></select></div>
+        <div class="form-group"><label>Email</label><input type="email" id="u-email" placeholder="juan@email.com" /></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" id="u-telefono" placeholder="+57 300 000 0000" /></div>
+        <div class="form-group"><label>Tarifa Mensual ($)</label><input type="number" id="u-tarifa" placeholder="150000" step="1000" /></div>
+      </div>
+      <div class="form-section-title">Medidas Físicas Iniciales</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Peso Inicial (kg) *</label><input type="number" id="u-peso" placeholder="70.5" step="0.1" min="30" required /></div>
+        <div class="form-group"><label>Peso Objetivo / Meta (kg)</label><input type="number" id="u-peso-objetivo" placeholder="65.0" step="0.1" /></div>
+        <div class="form-group"><label>Estatura (cm) *</label><input type="number" id="u-estatura" placeholder="175" min="100" required /></div>
+        <div class="form-group"><label>Pecho (cm)</label><input type="number" id="u-pecho" placeholder="95" step="0.5" /></div>
+        <div class="form-group"><label>Cintura (cm)</label><input type="number" id="u-cintura" placeholder="80" step="0.5" /></div>
+        <div class="form-group"><label>Cadera (cm)</label><input type="number" id="u-cadera" placeholder="95" step="0.5" /></div>
+        <div class="form-group"><label>Brazo Izq. (cm)</label><input type="number" id="u-brazo-izq" placeholder="35" step="0.5" /></div>
+        <div class="form-group"><label>Brazo Der. (cm)</label><input type="number" id="u-brazo-der" placeholder="35" step="0.5" /></div>
+        <div class="form-group"><label>Muslo Izq. (cm)</label><input type="number" id="u-muslo-izq" placeholder="55" step="0.5" /></div>
+        <div class="form-group"><label>Muslo Der. (cm)</label><input type="number" id="u-muslo-der" placeholder="55" step="0.5" /></div>
+        <div class="form-group"><label>Pantorrilla (cm)</label><input type="number" id="u-pantorrilla" placeholder="38" step="0.5" /></div>
+        <div class="form-group"><label>% Grasa Corporal</label><input type="number" id="u-grasa-pct" placeholder="18" step="0.1" min="2" max="60" /></div>
+      </div>
+      <div class="form-section-title">Objetivo y Plan</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Objetivo Principal</label><select id="u-objetivo"><option>Perder peso</option><option>Ganar músculo</option><option>Mantenimiento</option><option>Mejorar resistencia</option><option>Rehabilitación</option></select></div>
+        <div class="form-group"><label>Nivel de Experiencia</label><select id="u-nivel"><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select></div>
+        <div class="form-group"><label>Estado del Cliente</label><select id="u-estado"><option value="Activo">Activo</option><option value="Pausado">Pausado</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group full"><label>Observaciones / Lesiones</label><textarea id="u-obs" placeholder="Lesiones previas, restricciones, notas..." rows="3"></textarea></div>
+      </div>
+      
+      <div class="form-section-title">Fotos Iniciales (Antes)</div>
+      <div class="photo-upload-grid">
+        <!-- Frente -->
+        <div class="photo-upload-card">
+          <div class="photo-label">Frente</div>
+          <div class="photo-preview-box" id="preview-box-iniFrente">
+            <svg class="ph-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>Sin Foto</span>
+          </div>
+          <input type="hidden" id="u-fotoIniFrente" />
+          <input type="file" id="file-iniFrente" accept="image/*" style="display:none" onchange="handlePhotoUpload(this, 'iniFrente')" />
+          <div class="photo-actions-btn">
+            <button type="button" class="photo-btn" onclick="document.getElementById('file-iniFrente').click()">📁 Subir</button>
+            <button type="button" class="photo-btn" onclick="triggerWebcam('iniFrente')">📸 Cámara</button>
+          </div>
+        </div>
+
+        <!-- Perfil -->
+        <div class="photo-upload-card">
+          <div class="photo-label">Perfil</div>
+          <div class="photo-preview-box" id="preview-box-iniPerfil">
+            <svg class="ph-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>Sin Foto</span>
+          </div>
+          <input type="hidden" id="u-fotoIniPerfil" />
+          <input type="file" id="file-iniPerfil" accept="image/*" style="display:none" onchange="handlePhotoUpload(this, 'iniPerfil')" />
+          <div class="photo-actions-btn">
+            <button type="button" class="photo-btn" onclick="document.getElementById('file-iniPerfil').click()">📁 Subir</button>
+            <button type="button" class="photo-btn" onclick="triggerWebcam('iniPerfil')">📸 Cámara</button>
+          </div>
+        </div>
+
+        <!-- Espalda -->
+        <div class="photo-upload-card">
+          <div class="photo-label">Espalda</div>
+          <div class="photo-preview-box" id="preview-box-iniEspalda">
+            <svg class="ph-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>Sin Foto</span>
+          </div>
+          <input type="hidden" id="u-fotoIniEspalda" />
+          <input type="file" id="file-iniEspalda" accept="image/*" style="display:none" onchange="handlePhotoUpload(this, 'iniEspalda')" />
+          <div class="photo-actions-btn">
+            <button type="button" class="photo-btn" onclick="document.getElementById('file-iniEspalda').click()">📁 Subir</button>
+            <button type="button" class="photo-btn" onclick="triggerWebcam('iniEspalda')">📸 Cámara</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-usuario')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar Cliente</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Perfil -->
+<div class="modal-overlay" id="modal-perfil">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>Perfil del Cliente</h2>
+      <button class="modal-close" onclick="closeModal('modal-perfil')">✕</button>
+    </div>
+    <div id="perfil-content"></div>
+  </div>
+</div>
+
+<!-- Modal Sesión -->
+<div class="modal-overlay" id="modal-sesion">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Programar Sesión</h2>
+      <button class="modal-close" onclick="closeModal('modal-sesion')">✕</button>
+    </div>
+    <form id="form-sesion" onsubmit="guardarSesion(event)">
+      <input type="hidden" id="sesion-uid" />
+      <div class="form-section-title">Datos de la Sesión</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Fecha *</label><input type="date" id="s-fecha" required /></div>
+        <div class="form-group"><label>Hora *</label><input type="time" id="s-hora" required /></div>
+        <div class="form-group full"><label>Rutina Asignada</label><select id="s-rutina"><option value="">Sin rutina específica</option></select></div>
+        <div class="form-group full"><label>Notas de la Sesión</label><textarea id="s-notas" placeholder="Indicaciones especiales para esta sesión..." rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-sesion')">Cancelar</button>
+        <button type="submit" class="btn-primary">Programar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="persist.js"></script><script src="shared.js"></script>
+<script>
+  document.getElementById('sidebar-container').innerHTML = buildSidebar('usuarios');
+  document.getElementById('topbar-container').innerHTML = buildTopbar('Clientes', `<button class="btn-primary" onclick="abrirModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Cliente</button>`);
+  document.getElementById('toast-container').innerHTML = buildToast();
+
+  let filtroEstado = 'Activo';
+  let filtroObjetivo = '';
+
+  function setFiltroEstado(val, btn) {
+    filtroEstado = val;
+    document.querySelectorAll('.filter-status-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderUsuarios();
+  }
+
+  function setFiltroObjetivo(val, btn) {
+    filtroObjetivo = val;
+    document.querySelectorAll('.filter-obj-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderUsuarios();
+  }
+
+  function updateSummary() {
+    document.getElementById('sum-clientes').textContent = DB.usuarios.length;
+    document.getElementById('sum-revenue').textContent = '$' + calcRevenue().toLocaleString('es-CO');
+    document.getElementById('sum-completitud').textContent = calcCompletitudPromedio() + '%';
+    document.getElementById('sum-rutinas').textContent = DB.rutinas.length;
+  }
+
+  function renderUsuarios() {
+    updateSummary();
+    const grid = document.getElementById('usuarios-grid');
+    const q = document.getElementById('search-input').value.toLowerCase();
+    let lista = DB.usuarios;
+    if (q) lista = lista.filter(u => u.nombre.toLowerCase().includes(q));
+    if (filtroObjetivo) lista = lista.filter(u => u.objetivo === filtroObjetivo);
+    if (filtroEstado !== 'Todos') {
+      lista = lista.filter(u => (u.estado || 'Activo') === filtroEstado);
+    }
+
+    if (lista.length === 0) {
+      grid.innerHTML = `<div class="empty-state"><span class="empty-icon">👤</span><h3>${q||filtroObjetivo||filtroEstado!=='Todos'?'Sin resultados':'Sin clientes registrados'}</h3><p>${q||filtroObjetivo||filtroEstado!=='Todos'?'Ajusta el filtro o búsqueda':'Comienza registrando tu primer cliente.'}</p>${!q&&!filtroObjetivo&&filtroEstado==='Activo'?'<button class="btn-primary" onclick="abrirModal()">Agregar Cliente</button>':''}</div>`;
+      return;
+    }
+
+    const OBJETIVO_ICONS = { 'Perder peso':'💧','Ganar músculo':'💪','Mantenimiento':'⚖️','Mejorar resistencia':'🏃','Rehabilitación':'🏥' };
+
+    grid.innerHTML = lista.map(u => {
+      const avClass = avatarClass(u.nombre);
+      const ini = initials(u.nombre);
+      const rutinas = DB.rutinas.filter(r => r.usuarioId === u.id).length;
+      const completitud = calcCompletitudUsuario(u.id);
+      const b = bmi(u.peso, u.estatura);
+      const proximaSesion = (DB.sesiones || []).filter(s => s && s.usuarioId === u.id && s.estado === 'pendiente' && s.fecha >= new Date().toISOString().split('T')[0]).sort((a,b2)=>(a.fecha || '').localeCompare(b2.fecha || ''))[0];
+      const badgeCls = badgeClass(u.nivel);
+      
+      const warningColor = completitud < 50 ? 'var(--red)' : 'var(--pink)';
+      const warningLabel = completitud < 50 ? `<span style="font-size:10px;background:rgba(255,69,96,0.15);color:var(--red);padding:2px 6px;border-radius:4px;font-weight:700;display:inline-flex;align-items:center;gap:3px;vertical-align:middle;margin-left:4px;">⚠️ Baja</span>` : '';
+
+      const activeUser = getActiveUser();
+      const isActive = activeUser && activeUser.id === u.id;
+
+      return `<div class="user-card">
+        <div class="user-card-top">
+          <div class="user-avatar-lg ${avClass}">${ini}</div>
+          <div style="flex:1">
+            <div class="user-name" style="display:flex; align-items:center; gap:6px;">
+              <span>${u.nombre}</span>
+              <button class="btn-star-active" onclick="event.stopPropagation(); handleGlobalClientChange('${u.id}')" style="background:none; border:none; cursor:pointer; font-size:14px; padding:2px; color:${isActive ? '#FFD600' : 'rgba(255,255,255,0.2)'}; line-height:1;" title="${isActive ? 'Cliente Activo' : 'Marcar como Activo'}">★</button>
+            </div>
+            <div class="user-meta">${u.edad} años · ${u.genero}</div>
+            <div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap">
+              <span class="badge ${badgeCls}">${u.nivel}</span>
+              <span class="badge badge-purple">${OBJETIVO_ICONS[u.objetivo]||'🎯'} ${u.objetivo}</span>
+              ${u.estado && u.estado !== 'Activo' ? `<span class="badge" style="background:${u.estado === 'Pausado' ? 'rgba(255,193,7,0.15)' : 'rgba(255,69,96,0.15)'}; color:${u.estado === 'Pausado' ? 'var(--yellow)' : 'var(--red)'};">${u.estado}</span>` : ''}
+            </div>
+          </div>
+          ${u.tarifa ? `<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800;background:var(--grad-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">$${parseInt(u.tarifa).toLocaleString('es-CO')}</div><div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">/ mes</div></div>` : ''}
+        </div>
+
+        <div class="user-stats-row">
+          <div class="user-stat"><div class="user-stat-val">${u.peso} kg</div><div class="user-stat-lbl">Peso</div></div>
+          <div class="user-stat"><div class="user-stat-val">${u.estatura} cm</div><div class="user-stat-lbl">Estatura</div></div>
+          <div class="user-stat"><div class="user-stat-val">${b}</div><div class="user-stat-lbl">IMC</div></div>
+        </div>
+
+        <div class="user-progress-section">
+          <div class="user-progress-label" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <span>Completitud Semanal${warningLabel}</span>
+            <span style="color:${warningColor};font-weight:700">${completitud}%</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width:${completitud}%; background:${warningColor};"></div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">
+          🏋️ ${rutinas} rutina${rutinas!==1?'s':''} &nbsp;·&nbsp;
+          📅 ${proximaSesion ? formatDate(proximaSesion.fecha) + ' ' + proximaSesion.hora : 'Sin próxima sesión'}
+        </div>
+        ${u.email ? `<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">📧 ${u.email}</div>` : '<div style="margin-bottom:10px"></div>'}
+
+        <div class="user-card-actions">
+          <button class="btn-ghost" style="flex:1" onclick="verPerfil('${u.id}')">👁 Perfil</button>
+          <button class="btn-ghost" onclick="programarSesion('${u.id}')" title="Programar Sesión">📅</button>
+          <button class="btn-ghost" onclick="abrirWhatsAppCliente('${u.telefono}')" title="Enviar WhatsApp" style="color:#25D366; display:flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.1.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg>
+          </button>
+          <button class="btn-ghost" onclick="abrirModal('${u.id}')" title="Editar Cliente">✏️</button>
+          <button class="btn-ghost btn-danger" onclick="eliminarUsuario('${u.id}')" title="Eliminar Cliente">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+
+  function abrirModal(uid = null) {
+    document.getElementById('form-usuario').reset();
+    document.getElementById('uid').value = '';
+    document.getElementById('modal-title').textContent = 'Nuevo Cliente';
+    document.getElementById('u-estado').value = 'Activo';
+    document.getElementById('u-peso-objetivo').value = '';
+    
+    // Limpiar campos y previsualizaciones de fotos
+    document.getElementById('u-fotoIniFrente').value = '';
+    document.getElementById('u-fotoIniPerfil').value = '';
+    document.getElementById('u-fotoIniEspalda').value = '';
+    document.getElementById('u-grasa-pct').value = '';
+    updatePhotoPreview('iniFrente', '');
+    updatePhotoPreview('iniPerfil', '');
+    updatePhotoPreview('iniEspalda', '');
+
+    if (uid) {
+      const u = DB.usuarios.find(x => x.id === uid);
+      if (!u) return;
+      document.getElementById('modal-title').textContent = 'Editar Cliente';
+      document.getElementById('uid').value = u.id;
+      document.getElementById('u-nombre').value = u.nombre;
+      document.getElementById('u-edad').value = u.edad;
+      document.getElementById('u-genero').value = u.genero;
+      document.getElementById('u-email').value = u.email || '';
+      document.getElementById('u-telefono').value = u.telefono || '';
+      document.getElementById('u-tarifa').value = u.tarifa || '';
+      document.getElementById('u-peso').value = u.peso;
+      document.getElementById('u-peso-objetivo').value = u.pesoObjetivo || '';
+      document.getElementById('u-estatura').value = u.estatura;
+      document.getElementById('u-pecho').value = u.pecho || '';
+      document.getElementById('u-cintura').value = u.cintura || '';
+      document.getElementById('u-cadera').value = u.cadera || '';
+      document.getElementById('u-brazo-izq').value = u.brazoIzq || '';
+      document.getElementById('u-brazo-der').value = u.brazoDer || '';
+      document.getElementById('u-muslo-izq').value = u.musloIzq || '';
+      document.getElementById('u-muslo-der').value = u.musloDer || '';
+      document.getElementById('u-pantorrilla').value = u.pantorrilla || '';
+      document.getElementById('u-grasa-pct').value = u.grasaPct || '';
+      document.getElementById('u-objetivo').value = u.objetivo;
+      document.getElementById('u-nivel').value = u.nivel;
+      document.getElementById('u-estado').value = u.estado || 'Activo';
+      document.getElementById('u-obs').value = u.obs || '';
+
+      // Cargar fotos existentes
+      document.getElementById('u-fotoIniFrente').value = u.fotoIniFrente || '';
+      document.getElementById('u-fotoIniPerfil').value = u.fotoIniPerfil || '';
+      document.getElementById('u-fotoIniEspalda').value = u.fotoIniEspalda || '';
+      updatePhotoPreview('iniFrente', u.fotoIniFrente || '');
+      updatePhotoPreview('iniPerfil', u.fotoIniPerfil || '');
+      updatePhotoPreview('iniEspalda', u.fotoIniEspalda || '');
+    }
+    openModal('modal-usuario');
+  }
+
+  async function guardarUsuario(e) {
+    e.preventDefault();
+    try {
+      const id = document.getElementById('uid').value;
+      const nombre = document.getElementById('u-nombre').value.trim();
+      if (!nombre) {
+        showToast('⚠️ Ingresa el nombre del cliente', 'error');
+        return;
+      }
+      const u = {
+        id: id || genId(),
+        nombre: nombre,
+        edad: parseInt(document.getElementById('u-edad').value) || 0,
+        genero: document.getElementById('u-genero').value,
+        email: document.getElementById('u-email').value.trim(),
+        telefono: document.getElementById('u-telefono').value.trim(),
+        tarifa: parseFloat(document.getElementById('u-tarifa').value) || null,
+        peso: parseFloat(document.getElementById('u-peso').value) || 0,
+        pesoObjetivo: parseFloat(document.getElementById('u-peso-objetivo').value) || null,
+        estatura: parseFloat(document.getElementById('u-estatura').value) || 0,
+        pecho: parseFloat(document.getElementById('u-pecho').value) || null,
+        cintura: parseFloat(document.getElementById('u-cintura').value) || null,
+        cadera: parseFloat(document.getElementById('u-cadera').value) || null,
+        brazoIzq: parseFloat(document.getElementById('u-brazo-izq').value) || null,
+        brazoDer: parseFloat(document.getElementById('u-brazo-der').value) || null,
+        musloIzq: parseFloat(document.getElementById('u-muslo-izq').value) || null,
+        musloDer: parseFloat(document.getElementById('u-muslo-der').value) || null,
+        pantorrilla: parseFloat(document.getElementById('u-pantorrilla').value) || null,
+        grasaPct: parseFloat(document.getElementById('u-grasa-pct').value) || null,
+        objetivo: document.getElementById('u-objetivo').value,
+        nivel: document.getElementById('u-nivel').value,
+        estado: document.getElementById('u-estado').value || 'Activo',
+        obs: document.getElementById('u-obs').value.trim(),
+        fotoIniFrente: document.getElementById('u-fotoIniFrente').value || null,
+        fotoIniPerfil: document.getElementById('u-fotoIniPerfil').value || null,
+        fotoIniEspalda: document.getElementById('u-fotoIniEspalda').value || null,
+        fotoFinFrente: id ? (DB.usuarios.find(x=>x.id===id)?.fotoFinFrente || null) : null,
+        fotoFinPerfil: id ? (DB.usuarios.find(x=>x.id===id)?.fotoFinPerfil || null) : null,
+        fotoFinEspalda: id ? (DB.usuarios.find(x=>x.id===id)?.fotoFinEspalda || null) : null,
+        creado: id ? (DB.usuarios.find(x=>x.id===id)?.creado || new Date().toISOString()) : new Date().toISOString(),
+        actualizado: new Date().toISOString()
+      };
+      if (id) {
+        const i = DB.usuarios.findIndex(x=>x.id===id);
+        if (i >= 0) DB.usuarios[i] = u;
+      } else {
+        DB.usuarios.push(u);
+      }
+
+      const activeUser = getActiveUser();
+      if (!activeUser || !id) {
+        await setActiveUser(u);
+        window.dispatchEvent(new Event('gym_active_user_changed'));
+      }
+
+      await saveDB();
+      closeModal('modal-usuario');
+      renderUsuarios();
+      showToast(id ? '✅ Cliente actualizado' : '✅ Cliente registrado');
+    } catch (err) {
+      console.error('[guardarUsuario] Error al guardar cliente:', err);
+      showToast('❌ Error al guardar cliente', 'error');
+    }
+  }
+
+  async function eliminarUsuario(id) {
+    const ok = await confirmModal({
+      title: 'Eliminar Cliente',
+      message: '¿Estás seguro de eliminar este cliente? Se borrarán sus rutinas, progresos y sesiones.',
+      confirmText: 'Sí, Eliminar',
+      cancelText: 'Cancelar',
+      isDanger: true
+    });
+    if (!ok) return;
+    DB.usuarios = DB.usuarios.filter(u=>u.id!==id);
+    DB.rutinas = DB.rutinas.filter(r=>r.usuarioId!==id);
+    DB.progresos = DB.progresos.filter(p=>p.usuarioId!==id);
+    DB.sesiones = DB.sesiones.filter(s=>s.usuarioId!==id);
+    const active = getActiveUser();
+    if (!active || active.id === id || DB.usuarios.length === 0) {
+      localStorage.removeItem('gym_active_user');
+      localStorage.removeItem('romeo_current_active_user_id');
+      window.dispatchEvent(new Event('gym_active_user_changed'));
+    }
+    await saveDB(); renderUsuarios(); showToast('🗑️ Cliente eliminado', 'error');
+  }
+
+  function verPerfil(id) {
+    const u = DB.usuarios.find(x=>x.id===id); if(!u) return;
+    window.currentPerfilUserId = id;
+    const b = bmi(u.peso, u.estatura);
+    const avClass = avatarClass(u.nombre); const ini = initials(u.nombre);
+    const rutinas = DB.rutinas.filter(r=>r.usuarioId===id).length;
+    const sesiones = DB.sesiones.filter(s=>s.usuarioId===id);
+    const completadas = sesiones.filter(s=>s.estado==='completada').length;
+    document.getElementById('perfil-content').innerHTML = `
+      <div class="perfil-hero">
+        <div class="perfil-avatar ${avClass}">${ini}</div>
+        <div style="flex:1">
+          <div class="perfil-name" style="display:flex; align-items:center; gap:8px;">
+            <span>${u.nombre}</span>
+            <span style="font-size:10px; background:${(u.estado || 'Activo') === 'Inactivo' ? 'rgba(255,69,96,0.15)' : (u.estado || 'Activo') === 'Pausado' ? 'rgba(255,193,7,0.15)' : 'rgba(0,229,160,0.15)'}; color:${(u.estado || 'Activo') === 'Inactivo' ? 'var(--red)' : (u.estado || 'Activo') === 'Pausado' ? 'var(--yellow)' : 'var(--green)'}; padding:2px 8px; border-radius:12px; font-weight:700;">${u.estado || 'Activo'}</span>
+          </div>
+          <div class="perfil-meta">
+            ${u.edad} años · ${u.genero} · ${u.nivel}
+            ${u.telefono ? ` · <a href="#" onclick="abrirWhatsAppCliente('${u.telefono}'); return false;" style="color:#25D366; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:3px; margin-left:4px;">💬 ${u.telefono}</a>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span class="badge badge-pink">🎯 ${u.objetivo}</span>
+            ${u.tarifa?`<span class="badge badge-purple">💰 $${parseInt(u.tarifa).toLocaleString('es-CO')}/mes</span>`:''}
+            <a href="progreso.html?usuario=${u.id}" class="badge badge-blue" style="text-decoration:none; display:inline-flex; align-items:center; gap:3px;">📈 Ver Progreso</a>
+          </div>
+        </div>
+      </div>
+      <div class="perfil-body">
+        <div class="medidas-grid grid-4">
+          <div class="medida-card"><div class="val">${u.peso} kg</div><div class="lbl">Peso</div></div>
+          <div class="medida-card"><div class="val">${u.estatura} cm</div><div class="lbl">Estatura</div></div>
+          <div class="medida-card"><div class="val">${b}</div><div class="lbl">IMC</div></div>
+          <div class="medida-card"><div class="val">${bmiCategory(b)}</div><div class="lbl">Categoría</div></div>
+          <div class="medida-card"><div class="val">${rutinas}</div><div class="lbl">Rutinas</div></div>
+          <div class="medida-card"><div class="val">${sesiones.length}</div><div class="lbl">Sesiones</div></div>
+          <div class="medida-card"><div class="val">${completadas}</div><div class="lbl">Completadas</div></div>
+        </div>
+        <div class="form-section-title" style="padding-top:0">Medidas Corporales Iniciales</div>
+        <div class="medidas-grid grid-5">
+          ${[['Pecho',u.pecho ? u.pecho+' cm' : null],['Cintura',u.cintura ? u.cintura+' cm' : null],['Cadera',u.cadera ? u.cadera+' cm' : null],['B.Izq',u.brazoIzq ? u.brazoIzq+' cm' : null],['B.Der',u.brazoDer ? u.brazoDer+' cm' : null],['M.Izq',u.musloIzq ? u.musloIzq+' cm' : null],['M.Der',u.musloDer ? u.musloDer+' cm' : null],['Pantorrilla',u.pantorrilla ? u.pantorrilla+' cm' : null],['% Grasa',u.grasaPct ? u.grasaPct+'%' : null]]
+            .map(([l,v])=>`<div class="medida-card"><div class="val">${v||'—'}</div><div class="lbl">${l}</div></div>`).join('')}
+        </div>
+        ${u.macros ? `
+        <div class="form-section-title" style="margin-top:20px">Plan Nutricional (Macronutrientes)</div>
+        <div class="medidas-grid grid-4">
+          <div class="medida-card"><div class="val" style="background:var(--grad-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800">${u.macros.calorias} kcal</div><div class="lbl">Calorías (${u.macros.ajusteCal >= 0 ? '+' : ''}${u.macros.ajusteCal})</div></div>
+          <div class="medida-card"><div class="val" style="color:var(--pink)">${u.macros.proteinasG}g</div><div class="lbl">🍗 Proteínas</div></div>
+          <div class="medida-card"><div class="val" style="color:var(--yellow)">${u.macros.grasasG}g</div><div class="lbl">🥑 Grasas</div></div>
+          <div class="medida-card"><div class="val" style="color:var(--blue)">${u.macros.carbohidratosG}g</div><div class="lbl">🥣 Carbohidratos</div></div>
+        </div>
+        ` : `
+        <div class="form-section-title" style="margin-top:20px">Plan Nutricional</div>
+        <div style="font-size:12px; color:var(--text-secondary); background:var(--bg-surface); padding:12px 16px; border-radius:var(--r-sm); border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <span>Sin plan nutricional configurado para este cliente.</span>
+          <a href="macros.html?usuario=${u.id}" class="btn-primary" style="padding:6px 12px; font-size:11px; text-decoration:none; border-radius:var(--r-xs);">Calcular Macros</a>
+        </div>
+        `}
+        ${u.obs?`<div class="perfil-obs" style="margin-top:16px"><strong style="color:var(--pink)">📝 Observaciones:</strong><br>${u.obs}</div>`:''}
+        
+        <div class="form-section-title" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+          <span>📷 Evolución Visual (Antes y Después)</span>
+          <span style="font-size:10px; font-weight:normal; color:var(--text-muted);">🔒 Foto Inicial Protegida · 📸 Foto Después Actualizable</span>
+        </div>
+
+        <div class="before-after-grid">
+          <!-- Frente -->
+          <div class="before-after-card">
+            <h3>Frente</h3>
+            <div class="ba-photos-container">
+              <!-- ANTES (Bloqueada) -->
+              <div class="ba-photo-box">
+                <div class="ba-photo-frame" id="frame-iniFrente" style="border:1px solid rgba(255,255,255,0.12);">
+                  ${u.fotoIniFrente ? `
+                    <img src="${u.fotoIniFrente}" />
+                  ` : `
+                    <span class="ba-empty-photo">👤</span>
+                    <div class="ba-upload-btn-overlay" onclick="subirFotoInicial('${u.id}', 'Frente')">📷 Cargar</div>
+                  `}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="ba-label antes">Antes</span>
+                  ${u.fotoIniFrente ? `<button type="button" onclick="confirmDesbloquearFotoInicial('${u.id}', 'Frente')" style="font-size:9px; background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:700;" title="Foto Inicial Bloqueada">🔒 Inicial</button>` : ''}
+                </div>
+              </div>
+
+              <!-- DESPUÉS (Actualizable) -->
+              <div class="ba-photo-box">
+                <div class="ba-photo-frame" id="frame-finFrente" style="border:1.5px solid var(--pink);">
+                  ${u.fotoFinFrente ? `
+                    <img src="${u.fotoFinFrente}" />
+                    <button class="photo-remove-btn" onclick="eliminarFotoFinal('${u.id}', 'Frente', event)">✕</button>
+                  ` : `
+                    <span class="ba-empty-photo">👤</span>
+                    <div class="ba-upload-btn-overlay" onclick="subirFotoFinal('${u.id}', 'Frente')">📸 Actualizar</div>
+                  `}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="ba-label despues">Después</span>
+                  <button type="button" onclick="subirFotoFinal('${u.id}', 'Frente')" style="font-size:9px; background:rgba(0,229,160,0.15); color:var(--green); border:1px solid rgba(0,229,160,0.4); border-radius:4px; font-weight:800; cursor:pointer; padding:2px 6px;">📸 Actualizar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+ 
+          <!-- Perfil -->
+          <div class="before-after-card">
+            <h3>Perfil</h3>
+            <div class="ba-photos-container">
+              <!-- ANTES (Bloqueada) -->
+              <div class="ba-photo-box">
+                <div class="ba-photo-frame" id="frame-iniPerfil" style="border:1px solid rgba(255,255,255,0.12);">
+                  ${u.fotoIniPerfil ? `
+                    <img src="${u.fotoIniPerfil}" />
+                  ` : `
+                    <span class="ba-empty-photo">👤</span>
+                    <div class="ba-upload-btn-overlay" onclick="subirFotoInicial('${u.id}', 'Perfil')">📷 Cargar</div>
+                  `}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="ba-label antes">Antes</span>
+                  ${u.fotoIniPerfil ? `<button type="button" onclick="confirmDesbloquearFotoInicial('${u.id}', 'Perfil')" style="font-size:9px; background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:700;" title="Foto Inicial Bloqueada">🔒 Inicial</button>` : ''}
+                </div>
+              </div>
+
+              <!-- DESPUÉS (Actualizable) -->
+              <div class="ba-photo-box">
+                <div class="ba-photo-frame" id="frame-finPerfil" style="border:1.5px solid var(--pink);">
+                  ${u.fotoFinPerfil ? `
+                    <img src="${u.fotoFinPerfil}" />
+                    <button class="photo-remove-btn" onclick="eliminarFotoFinal('${u.id}', 'Perfil', event)">✕</button>
+                  ` : `
+                    <span class="ba-empty-photo">👤</span>
+                    <div class="ba-upload-btn-overlay" onclick="subirFotoFinal('${u.id}', 'Perfil')">📸 Actualizar</div>
+                  `}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="ba-label despues">Después</span>
+                  <button type="button" onclick="subirFotoFinal('${u.id}', 'Perfil')" style="font-size:9px; background:rgba(0,229,160,0.15); color:var(--green); border:1px solid rgba(0,229,160,0.4); border-radius:4px; font-weight:800; cursor:pointer; padding:2px 6px;">📸 Actualizar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+ 
+          <!-- Espalda -->
+          <div class="before-after-card">
+            <h3>Espalda</h3>
+            <div class="ba-photos-container">
+              <!-- ANTES (Bloqueada) -->
+              <div class="ba-photo-box">
+                <div class="ba-photo-frame" id="frame-iniEspalda" style="border:1px solid rgba(255,255,255,0.12);">
+                  ${u.fotoIniEspalda ? `
+                    <img src="${u.fotoIniEspalda}" />
+                  ` : `
+                    <span class="ba-empty-photo">👤</span>
+                    <div class="ba-upload-btn-overlay" onclick="subirFotoInicial('${u.id}', 'Espalda')">📷 Cargar</div>
+                  `}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="ba-label antes">Antes</span>
+                  ${u.fotoIniEspalda ? `<button type="button" onclick="confirmDesbloquearFotoInicial('${u.id}', 'Espalda')" style="font-size:9px; background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:700;" title="Foto Inicial Bloqueada">🔒 Inicial</button>` : ''}
+                </div>
+              </div>
+
+              <!-- DESPUÉS (Actualizable) -->
+              <div class="ba-photo-box">
+                <div class="ba-photo-frame" id="frame-finEspalda" style="border:1.5px solid var(--pink);">
+                  ${u.fotoFinEspalda ? `
+                    <img src="${u.fotoFinEspalda}" />
+                    <button class="photo-remove-btn" onclick="eliminarFotoFinal('${u.id}', 'Espalda', event)">✕</button>
+                  ` : `
+                    <span class="ba-empty-photo">👤</span>
+                    <div class="ba-upload-btn-overlay" onclick="subirFotoFinal('${u.id}', 'Espalda')">📸 Actualizar</div>
+                  `}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="ba-label despues">Después</span>
+                  <button type="button" onclick="subirFotoFinal('${u.id}', 'Espalda')" style="font-size:9px; background:rgba(0,229,160,0.15); color:var(--green); border:1px solid rgba(0,229,160,0.4); border-radius:4px; font-weight:800; cursor:pointer; padding:2px 6px;">📸 Actualizar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-title" style="margin-top:20px">📋 Historial de Entrenamientos</div>
+        <div id="perfil-historial-sesiones" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+          <!-- Se cargará dinámicamente -->
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap">
+          <button class="btn-primary" onclick="closeModal('modal-perfil');abrirModal('${u.id}')">✏️ Editar</button>
+          <a href="rutinas.html?usuario=${u.id}" class="btn-secondary">🏋️ Rutinas</a>
+          <a href="progreso.html?usuario=${u.id}" class="btn-secondary">📊 Progreso</a>
+          <a href="progreso.html?usuario=${u.id}&print=1" class="btn-secondary" style="background:var(--grad-main); color:white; border:none;">🖨️ Ficha Avance</a>
+          <button class="btn-secondary" onclick="closeModal('modal-perfil');programarSesion('${u.id}')">📅 Sesión</button>
+        </div>
+      </div>`;
+    renderPerfilSesiones(u.id);
+    openModal('modal-perfil');
+  }
+
+  function handlePhotoUpload(input, type) {
+    if (input.files && input.files[0]) {
+      compressImage(input.files[0], 400, 533, 0.6, function(dataUrl) {
+        document.getElementById(`u-foto${type.charAt(0).toUpperCase() + type.slice(1)}`).value = dataUrl;
+        updatePhotoPreview(type, dataUrl);
+      });
+    }
+  }
+
+  function triggerWebcam(type) {
+    openWebcamModal(function(dataUrl) {
+      document.getElementById(`u-foto${type.charAt(0).toUpperCase() + type.slice(1)}`).value = dataUrl;
+      updatePhotoPreview(type, dataUrl);
+    });
+  }
+
+  function updatePhotoPreview(type, dataUrl) {
+    const box = document.getElementById(`preview-box-${type}`);
+    if (!box) return;
+    if (dataUrl) {
+      box.innerHTML = `
+        <img src="${dataUrl}" class="photo-preview-img" />
+        <button type="button" class="photo-remove-btn" onclick="removePhoto('${type}')">✕</button>
+      `;
+    } else {
+      box.innerHTML = `
+        <svg class="ph-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>Sin Foto</span>
+      `;
+    }
+  }
+
+  function removePhoto(type) {
+    const input = document.getElementById(`u-foto${type.charAt(0).toUpperCase() + type.slice(1)}`);
+    if (input) input.value = '';
+    updatePhotoPreview(type, '');
+  }
+
+  function subirFotoFinal(uid, angle) {
+    const u = DB.usuarios.find(x => x.id === uid);
+    if (!u) return;
+
+    seleccionarOrigenFoto(
+      function() {
+        openWebcamModal(function(dataUrl) {
+          saveFinalPhoto(uid, angle, dataUrl);
+        });
+      },
+      function() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function(e) {
+          if (e.target.files && e.target.files[0]) {
+            compressImage(e.target.files[0], 400, 533, 0.6, function(dataUrl) {
+              saveFinalPhoto(uid, angle, dataUrl);
+            });
+          }
+        };
+        input.click();
+      }
+    );
+  }
+
+  function saveFinalPhoto(uid, angle, dataUrl) {
+    const idx = DB.usuarios.findIndex(x => x.id === uid);
+    if (idx < 0) return;
+    const field = `fotoFin${angle}`;
+    DB.usuarios[idx][field] = dataUrl;
+    saveDB();
+    showToast(`✅ Foto de ${angle} ("Después") guardada`);
+    verPerfil(uid);
+  }
+
+  function confirmDesbloquearFotoInicial(uid, angle) {
+    if (confirm(`La foto "Antes" (${angle}) está bloqueada como referencia inicial. ¿Deseas desbloquearla para subir una nueva?`)) {
+      subirFotoInicial(uid, angle);
+    }
+  }
+
+  function eliminarFotoFinal(uid, angle, event) {
+    if (event) event.stopPropagation();
+    if (!confirm(`¿Eliminar la foto "Después" de ${angle}?`)) return;
+    const idx = DB.usuarios.findIndex(x => x.id === uid);
+    if (idx < 0) return;
+    const field = `fotoFin${angle}`;
+    DB.usuarios[idx][field] = null;
+    saveDB();
+    showToast(`🗑️ Foto "Después" de ${angle} eliminada`, 'error');
+    verPerfil(uid);
+  }
+
+  function subirFotoInicial(uid, angle) {
+    const u = DB.usuarios.find(x => x.id === uid);
+    if (!u) return;
+
+    seleccionarOrigenFoto(
+      function() {
+        openWebcamModal(function(dataUrl) {
+          saveInitialPhoto(uid, angle, dataUrl);
+        });
+      },
+      function() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function(e) {
+          if (e.target.files && e.target.files[0]) {
+            compressImage(e.target.files[0], 400, 533, 0.6, function(dataUrl) {
+              saveInitialPhoto(uid, angle, dataUrl);
+            });
+          }
+        };
+        input.click();
+      }
+    );
+  }
+
+  function saveInitialPhoto(uid, angle, dataUrl) {
+    const idx = DB.usuarios.findIndex(x => x.id === uid);
+    if (idx < 0) return;
+    const field = `fotoIni${angle}`;
+    DB.usuarios[idx][field] = dataUrl;
+    saveDB();
+    showToast(`✅ Foto de ${angle} ("Antes") guardada`);
+    verPerfil(uid);
+  }
+
+  function eliminarFotoInicial(uid, angle, event) {
+    if (event) event.stopPropagation();
+    if (!confirm(`¿Eliminar la foto "Antes" de ${angle}?`)) return;
+    const idx = DB.usuarios.findIndex(x => x.id === uid);
+    if (idx < 0) return;
+    const field = `fotoIni${angle}`;
+    DB.usuarios[idx][field] = null;
+    saveDB();
+    showToast(`🗑️ Foto "Antes" de ${angle} eliminada`, 'error');
+    verPerfil(uid);
+  }
+
+  function programarSesion(uid) {
+    document.getElementById('form-sesion').reset();
+    document.getElementById('sesion-uid').value = uid;
+    document.getElementById('s-fecha').value = new Date().toISOString().split('T')[0];
+    document.getElementById('s-hora').value = '08:00';
+    const rutSel = document.getElementById('s-rutina');
+    rutSel.innerHTML = '<option value="">Sin rutina específica</option>';
+    DB.rutinas.filter(r => r.usuarioId === uid).forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id; opt.textContent = `${r.mes} ${r.anio} — ${r.tipo}`;
+      rutSel.appendChild(opt);
+    });
+    openModal('modal-sesion');
+  }
+
+  function guardarSesion(e) {
+    e.preventDefault();
+    const uid = document.getElementById('sesion-uid').value;
+    const sesion = {
+      id: genId(), usuarioId: uid,
+      fecha: document.getElementById('s-fecha').value,
+      hora: document.getElementById('s-hora').value,
+      rutinaId: document.getElementById('s-rutina').value || null,
+      notas: document.getElementById('s-notas').value,
+      estado: 'pendiente',
+    };
+    DB.sesiones.push(sesion);
+    saveDB(); closeModal('modal-sesion'); renderUsuarios();
+    showToast('📅 Sesión programada correctamente');
+  }
+
+  // ======= HISTORIAL DE ENTRENAMIENTOS EN PERFIL =======
+  function renderPerfilSesiones(uid) {
+    const container = document.getElementById('perfil-historial-sesiones');
+    if (!container) return;
+    const userSessions = (DB.sesiones || []).filter(s => s && s.usuarioId === uid).sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    if (userSessions.length === 0) {
+      container.innerHTML = `<div style="font-size:12px; color:var(--text-secondary); text-align:center; padding:12px; border:1px dashed var(--border); border-radius:var(--r-xs);">Sin sesiones registradas aún.</div>`;
+      return;
+    }
+    container.innerHTML = userSessions.map(s => {
+      const r = DB.rutinas.find(x => x.id === s.rutinaId);
+      const durMin = s.duracionSeg ? Math.floor(s.duracionSeg/60) + ' min' : '—';
+      const estadoBadge = { pendiente:'badge-blue', completada:'badge-green', cancelada:'badge-orange' }[s.estado] || 'badge-blue';
+      return `
+        <div style="border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg-card); overflow: hidden; margin-bottom: 4px;">
+          <div style="padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="togglePerfilSessionDetail('${s.id}')">
+            <div style="flex: 1; text-align: left;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--text-primary);">${r ? `${r.mes} ${r.anio} — ${r.tipo}` : 'Sesión sin rutina'}</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 3px;">📅 ${formatDate(s.fecha)} ${s.hora} &nbsp;·&nbsp; ⏱ ${durMin} &nbsp;·&nbsp; 🏋️ ${s.volumenKg||0}kg &nbsp;·&nbsp; ✅ ${s.setsCompletados||0}/${s.setsTotal||0} sets</div>
+            </div>
+            <span class="badge ${estadoBadge}" style="font-size: 9px; padding: 2px 6px;">${s.estado}</span>
+          </div>
+          <div id="psd-${s.id}" style="display: none; padding: 10px 12px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.15); text-align: left;">
+            ${renderPerfilSessionDetailHtml(s)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function togglePerfilSessionDetail(id) {
+    const el = document.getElementById('psd-' + id);
+    if (el) {
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+  }
+
+  function renderPerfilSessionDetailHtml(s) {
+    if (!s.ejercicios || s.ejercicios.length === 0) {
+      return `<div style="color:var(--text-muted); font-style:italic; font-size: 11px;">Detalle de ejercicios no disponible para esta sesión.</div>`;
+    }
+    return s.ejercicios.map(ej => {
+      const setsHtml = ej.series.map(set => {
+        const complClass = set.completado ? 'completed' : '';
+        const complCheck = set.completado ? '✓ ' : '✗ ';
+        const style = set.completado ? 'color: var(--green); border-color: rgba(0, 229, 160, 0.25); background: rgba(0, 229, 160, 0.03);' : 'color: var(--text-secondary);';
+        return `<span class="session-detail-set-badge ${complClass}" style="display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); margin-right: 5px; margin-bottom: 5px; border: 1px solid var(--border); ${style}">${complCheck}S${set.set}: ${set.reps}x${set.peso}kg</span>`;
+      }).join('');
+      return `<div style="margin-bottom: 8px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">${ej.nombre} <span class="tag-muscular" style="font-size:8px; padding:1px 5px; vertical-align: middle;">${ej.grupo}</span></div>
+        <div style="display: flex; flex-wrap: wrap;">${setsHtml}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function abrirWhatsAppCliente(tel) {
+    if (!tel) {
+      showToast('Este cliente no tiene teléfono registrado', 'error');
+      return;
+    }
+    const clean = tel.replace(/[^\d+]/g, '');
+    window.open(`https://api.whatsapp.com/send?phone=${clean}`, '_blank');
+  }
+
+  renderUsuarios();
+  window.addEventListener('gym_active_user_changed', renderUsuarios);
+  window.addEventListener('romeo_db_loaded', function() {
+    renderUsuarios();
+    const modalPerfil = document.getElementById('modal-perfil');
+    if (modalPerfil && modalPerfil.classList.contains('active') && window.currentPerfilUserId) {
+      verPerfil(window.currentPerfilUserId);
+    }
+  });
+
+  // Auto-open perfil if ?perfil=id
+  const perfilId = new URLSearchParams(window.location.search).get('perfil');
+  if (perfilId) verPerfil(perfilId);
+</script>
+</body>
+</html>
