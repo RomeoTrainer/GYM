@@ -217,13 +217,13 @@
     const activeUser = getActiveUser();
     
     // Si hay una sesión activa en curso, priorizar el usuario de esa sesión activa
-    if (currentActiveUserId && activeSessions[currentActiveUserId] && DB.usuarios.some(u => u.id === currentActiveUserId)) {
+    if (currentActiveUserId && activeSessions[currentActiveUserId] && DB.usuarios.some(u => String(u.id) === String(currentActiveUserId))) {
       selU.value = currentActiveUserId;
-    } else if (currentVal && DB.usuarios && DB.usuarios.some(u => u.id === currentVal)) {
+    } else if (currentVal && DB.usuarios && DB.usuarios.some(u => String(u.id) === String(currentVal))) {
       selU.value = currentVal;
-    } else if (params.get('usuario') && DB.usuarios && DB.usuarios.some(u => u.id === params.get('usuario'))) {
+    } else if (params.get('usuario') && DB.usuarios && DB.usuarios.some(u => String(u.id) === String(params.get('usuario')))) {
       selU.value = params.get('usuario');
-    } else if (activeUser && DB.usuarios && DB.usuarios.some(u => u.id === activeUser.id)) {
+    } else if (activeUser && DB.usuarios && DB.usuarios.some(u => String(u.id) === String(activeUser.id))) {
       selU.value = activeUser.id;
     } else if (DB.usuarios && DB.usuarios.length > 0) {
       selU.value = DB.usuarios[0].id;
@@ -246,9 +246,9 @@
     if (selR) {
       selR.innerHTML = '<option value="">— Seleccionar Rutina —</option>';
       if (uid && DB && Array.isArray(DB.rutinas)) {
-        DB.rutinas.filter(r=>r.usuarioId===uid).forEach(r => {
+        DB.rutinas.filter(r=> String(r.usuarioId) === String(uid)).forEach(r => {
           const o = document.createElement('option');
-          o.value = r.id; o.textContent = `${r.mes} ${r.anio} — ${r.tipo} (${r.ejercicios ? r.ejercicios.length : 0} ej.)`;
+          o.value = r.id; o.textContent = `${r.mes || ''} ${r.anio || ''} — ${r.tipo || 'Rutina'} (${getEjerciciosArray(r).length} ej.)`;
           selR.appendChild(o);
         });
         selR.onchange = () => previewRutina();
@@ -267,34 +267,43 @@
   }
 
   function previewRutina() {
-    const rid = document.getElementById('sel-rutina').value;
+    const selR = document.getElementById('sel-rutina');
+    const rid = selR ? selR.value : '';
     const btn = document.getElementById('btn-iniciar');
-    if (!rid) { btn.disabled = true; previewVacio(); return; }
-    const r = DB.rutinas.find(x=>x.id===rid);
-    if (!r) { btn.disabled = true; return; }
-    btn.disabled = false;
-    document.getElementById('preview-rutina').innerHTML = `
-      <div class="card">
-        <div class="card-header">
-          <h2>📋 Vista Previa — ${r.mes} ${r.anio}</h2>
-          <span class="badge badge-pink">${r.tipo}</span>
-        </div>
-        <table class="ejercicios-table">
-          <thead><tr><th>#</th><th>Ilustración</th><th>Ejercicio</th><th>Grupo</th><th>Series × Reps</th><th>Peso</th><th>Descanso</th></tr></thead>
-          <tbody>${r.ejercicios.map((ej,i)=>`<tr>
-            <td style="color:var(--text-muted)">${i+1}</td>
-            <td>
-              ${ej.imagen ? `<img src="${ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />` : '<span style="color:var(--text-muted); font-size:11px;">—</span>'}
-            </td>
-            <td><strong>${ej.nombre}</strong></td>
-            <td><span class="tag-muscular">${ej.grupo}</span></td>
-            <td>${ej.series||'—'}</td>
-            <td style="font-weight:800;color:var(--pink)">${ej.peso?ej.peso+' kg':'—'}</td>
-            <td>${ej.descanso?ej.descanso+'s':'—'}</td>
-          </tr>`).join('')}</tbody>
-        </table>
-        ${r.notes || r.notas?`<div class="rutina-notas" style="margin-top:12px">📝 ${r.notes || r.notas}</div>`:''}
-      </div>`;
+    if (!rid) { if (btn) btn.disabled = true; previewVacio(); return; }
+    
+    const r = (DB.rutinas || []).find(x => String(x.id) === String(rid));
+    if (!r) { if (btn) btn.disabled = true; previewVacio(); return; }
+    
+    if (btn) btn.disabled = false;
+    
+    const ejs = getEjerciciosArray(r);
+    
+    const prev = document.getElementById('preview-rutina');
+    if (prev) {
+      prev.innerHTML = `
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header">
+            <h2>📋 Vista Previa — ${r.mes || ''} ${r.anio || ''}</h2>
+            <span class="badge badge-pink">${r.tipo || 'Rutina'}</span>
+          </div>
+          <table class="ejercicios-table">
+            <thead><tr><th>#</th><th>Ilustración</th><th>Ejercicio</th><th>Grupo</th><th>Series × Reps</th><th>Peso</th><th>Descanso</th></tr></thead>
+            <tbody>${ejs.map((ej,i)=>`<tr>
+              <td style="color:var(--text-muted)">${i+1}</td>
+              <td>
+                ${ej.imagen ? `<img src="${ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />` : '<span style="color:var(--text-muted); font-size:11px;">—</span>'}
+              </td>
+              <td><strong>${ej.nombre || 'Ejercicio'}</strong></td>
+              <td><span class="tag-muscular">${ej.grupo || 'General'}</span></td>
+              <td>${ej.series||'—'}</td>
+              <td style="font-weight:800;color:var(--pink)">${ej.peso?ej.peso+' kg':'—'}</td>
+              <td>${ej.descanso?ej.descanso+'s':'—'}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+          ${r.notes || r.notas?`<div class="rutina-notas" style="margin-top:12px">📝 ${r.notes || r.notas}</div>`:''}
+        </div>`;
+    }
   }
 
   function loadActiveSessions() {
@@ -634,10 +643,10 @@
     sessionSection.style.display = 'block';
     
     const s = activeSessions[currentActiveUserId];
-    const u = (DB.usuarios || []).find(x => x.id === s.usuarioId);
-    let r = (DB.rutinas || []).find(x => x.id === s.rutinaId);
+    const u = (DB.usuarios || []).find(x => String(x.id) === String(s.usuarioId));
+    let r = (DB.rutinas || []).find(x => String(x.id) === String(s.rutinaId));
     if (!r && s.usuarioId) {
-      r = (DB.rutinas || []).find(x => x.usuarioId === s.usuarioId);
+      r = (DB.rutinas || []).find(x => String(x.usuarioId) === String(s.usuarioId));
       if (r) s.rutinaId = r.id;
     }
     
@@ -683,12 +692,19 @@
   }
 
   function iniciarSesion() {
-    const rid = document.getElementById('sel-rutina').value;
-    const uid = selU.value;
-    if (!rid || !uid) return;
+    const selR = document.getElementById('sel-rutina');
+    const rid = selR ? selR.value : '';
+    const uid = selU ? selU.value : '';
+    if (!rid || !uid) {
+      showToast('⚠️ Selecciona un cliente y una rutina', 'error');
+      return;
+    }
     
-    const r = DB.rutinas.find(x => x.id === rid);
-    if (!r) return;
+    const r = (DB.rutinas || []).find(x => String(x.id) === String(rid));
+    if (!r) {
+      showToast('⚠️ No se encontró la rutina seleccionada', 'error');
+      return;
+    }
     
     if (activeSessions[uid]) {
       showToast('⚠️ Este cliente ya tiene una sesión activa', 'error');
@@ -698,7 +714,7 @@
     
     activeSessions[uid] = {
       usuarioId: uid,
-      rutinaId: rid,
+      rutinaId: r.id,
       inicioTime: Date.now(),
       timerSec: 0,
       setsCompletados: 0,
