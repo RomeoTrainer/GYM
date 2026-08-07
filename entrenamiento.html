@@ -751,7 +751,7 @@
       return;
     }
     
-    if (activeSessions[uid]) {
+    if (getActiveSession(uid)) {
       showToast('⚠️ Este cliente ya tiene una sesión activa', 'error');
       switchActiveSession(uid);
       return;
@@ -1055,7 +1055,7 @@
     });
     if (!ok) return;
     
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (!s) return;
     
     cancelarDescanso();
@@ -1064,7 +1064,7 @@
     const pct = s.setsTotal > 0 ? Math.round(s.setsCompletados / s.setsTotal * 100) : 0;
     
     if (uid) {
-      const r = DB.rutinas.find(x => x.id === rid);
+      const r = (DB.rutinas || []).find(x => String(x.id) === String(rid));
       const ejerciciosRealizados = [];
       
       if (r && r.ejercicios) {
