@@ -185,37 +185,63 @@ const SupabaseSync = (() => {
   };
 })();
 
-function loadDB() {
+async function loadDB() {
+  let loadedFromLocal = false;
   try {
     const s = localStorage.getItem('romeo_db');
     if (s) {
       const parsed = JSON.parse(s);
-      if (parsed && typeof parsed === 'object') {
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.usuarios) && parsed.usuarios.length > 0) {
         DB.usuarios = parsed.usuarios || [];
         DB.rutinas = parsed.rutinas || [];
         DB.progresos = parsed.progresos || [];
         DB.sesiones = parsed.sesiones || [];
         DB.packs = parsed.packs || [];
+        loadedFromLocal = true;
       }
     }
   } catch(e) {}
-  try {
-    if (!DB.usuarios.length && !DB.rutinas.length) {
-      const old = localStorage.getItem('gymproDB');
-      if (old) {
-        const o = JSON.parse(old);
-        DB.usuarios = o.usuarios || [];
-        DB.rutinas = o.rutinas || [];
-        DB.progresos = o.progresos || [];
-        DB.sesiones = o.sesiones || [];
-        DB.packs = o.packs || [];
+
+  if (!loadedFromLocal) {
+    try {
+      const p = await PersistDB.get('romeo_db');
+      if (p && typeof p === 'object' && Array.isArray(p.usuarios) && p.usuarios.length > 0) {
+        DB.usuarios = p.usuarios || [];
+        DB.rutinas = p.rutinas || [];
+        DB.progresos = p.progresos || [];
+        DB.sesiones = p.sesiones || [];
+        DB.packs = p.packs || [];
+        loadedFromLocal = true;
       }
+    } catch(e) {}
+  }
+
+  if (!loadedFromLocal) {
+    try {
+      const resp = await fetch('./data/romeo_db.json?v=' + Date.now());
+      if (resp.ok) {
+        const serverData = await resp.json();
+        if (serverData && typeof serverData === 'object' && Array.isArray(serverData.usuarios) && serverData.usuarios.length > 0) {
+          DB.usuarios = serverData.usuarios || [];
+          DB.rutinas = serverData.rutinas || [];
+          DB.progresos = serverData.progresos || [];
+          DB.sesiones = serverData.sesiones || [];
+          DB.packs = serverData.packs || [];
+          try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
+          await PersistDB.set('romeo_db', DB);
+          loadedFromLocal = true;
+        }
+      }
+    } catch(e) {
+      console.warn('[loadDB] Fallback fetch data/romeo_db.json error:', e);
     }
-  } catch(e) {}
+  }
+
   if (!DB.sesiones) DB.sesiones = [];
   if (!DB.packs) DB.packs = [];
 
-  // Async sync with Supabase Cloud 24/7
+  window.dispatchEvent(new Event('romeo_db_loaded'));
+
   if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
     setTimeout(() => { SupabaseSync.sync(); }, 300);
   }
