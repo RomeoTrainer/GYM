@@ -215,7 +215,11 @@
     }
     const params = new URLSearchParams(window.location.search);
     const activeUser = getActiveUser();
-    if (currentVal && DB.usuarios && DB.usuarios.some(u => u.id === currentVal)) {
+    
+    // Si hay una sesión activa en curso, priorizar el usuario de esa sesión activa
+    if (currentActiveUserId && activeSessions[currentActiveUserId] && DB.usuarios.some(u => u.id === currentActiveUserId)) {
+      selU.value = currentActiveUserId;
+    } else if (currentVal && DB.usuarios && DB.usuarios.some(u => u.id === currentVal)) {
       selU.value = currentVal;
     } else if (params.get('usuario') && DB.usuarios && DB.usuarios.some(u => u.id === params.get('usuario'))) {
       selU.value = params.get('usuario');
@@ -253,10 +257,8 @@
     
     if (uid && activeSessions[uid]) {
       currentActiveUserId = uid;
-      showCurrentActiveSessionView();
-    } else if (!currentActiveUserId || !activeSessions[currentActiveUserId]) {
-      previewVacio();
     }
+    showCurrentActiveSessionView();
   }
 
   function previewVacio() {
@@ -612,7 +614,6 @@
       sessionSection.style.display = 'none';
       currentActiveUserId = null;
       saveActiveSessions();
-      onUsuarioChange();
       return;
     }
     
