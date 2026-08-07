@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Romeo PT" />
   <link rel="apple-touch-icon" href="1.jpeg" />
+  <link rel="manifest" href="manifest.json" />
   <style>
     /* ── Alert Panel ── */
     .alerts-list { display:flex; flex-direction:column; gap:8px; padding:12px 14px; }
@@ -271,11 +272,12 @@
 </main>
 
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
+<div id="bottom-nav-container"></div>
+<script src="persist.js?v=93"></script><script src="shared.js?v=93"></script>
 <script>
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('dashboard');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Dashboard', '<div style="display:flex; gap:8px;"><label class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; height: 32px; cursor: pointer; margin:0;">📤 Restaurar<input type="file" style="display:none" accept=".json" onchange="cargarBackup(event)"></label><button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; height: 32px; margin:0;" onclick="descargarBackup()">📥 Respaldar</button></div>');
-  document.getElementById('toast-container').innerHTML = buildToast();
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('dashboard');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Dashboard', '<div style="display:flex; gap:8px;"><label class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; height: 32px; cursor: pointer; margin:0;">📤 Restaurar<input type="file" style="display:none" accept=".json" onchange="cargarBackup(event)"></label><button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; height: 32px; margin:0;" onclick="descargarBackup()">📥 Respaldar</button></div>');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   // ── Quote ──
   var q = getQuoteOfDay();
@@ -641,10 +643,8 @@
   window.addEventListener('romeo_db_loaded', function() {
     document.getElementById('kpi-clientes').textContent = DB.usuarios.length;
     document.getElementById('kpi-clientes-sub').textContent = DB.usuarios.length > 0 ? DB.usuarios.length + ' registrados' : '';
-    actualizarWidgetMacros();
+    if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('dashboard');
   });
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('dashboard');
 </script>
-<div id="bottom-nav-container"></div>
 </body>
 </html>

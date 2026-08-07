@@ -32,7 +32,7 @@
       </div>
       <div style="margin-top: 14px; display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
         <span class="badge badge-pink" style="font-size: 11px; padding: 5px 12px;">Versión v3.0.0</span>
-        <span class="badge badge-purple" style="font-size: 11px; padding: 5px 12px;">Build v92</span>
+        <span class="badge badge-purple" style="font-size: 11px; padding: 5px 12px;">Build v94</span>
         <span class="badge" style="background: rgba(0,229,160,0.15); color: var(--green); font-size: 11px; padding: 5px 12px;">🟢 PWA Activa</span>
       </div>
     </div>
@@ -86,7 +86,7 @@
         <!-- v3.0.0 -->
         <div style="border-left: 3px solid var(--pink); padding-left: 16px; position: relative;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <strong style="font-size: 15px; color: #fff;">v3.0.0 (Build v92)</strong>
+            <strong style="font-size: 15px; color: #fff;">v3.0.0 (Build v94)</strong>
             <span class="badge badge-pink" style="font-size: 9px;">Actual</span>
             <span style="font-size: 11px; color: var(--text-muted); margin-left: auto;">Agosto 2026</span>
           </div>
@@ -155,13 +155,13 @@
 </div>
 
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
-<script>
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('creditos');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Sistema & Créditos');
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('creditos');
-  document.getElementById('toast-container').innerHTML = buildToast();
-</script>
 <div id="bottom-nav-container"></div>
+<script src="persist.js?v=93"></script><script src="shared.js?v=93"></script>
+<script>
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('creditos');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Sistema & Créditos');
+  if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('creditos');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
+</script>
 </body>
 </html>

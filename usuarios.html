@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Romeo PT" />
   <link rel="apple-touch-icon" href="1.jpeg" />
+  <link rel="manifest" href="manifest.json" />
 </head>
 <body>
 
@@ -198,12 +199,13 @@
 </div>
 
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
+<div id="bottom-nav-container"></div>
+<script src="persist.js?v=93"></script><script src="shared.js?v=93"></script>
 <script>
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('usuarios');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Clientes', `<button class="btn-primary" onclick="abrirModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Cliente</button>`);
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('usuarios');
-  document.getElementById('toast-container').innerHTML = buildToast();
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('usuarios');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Clientes', `<button class="btn-primary" onclick="abrirModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Cliente</button>`);
+  if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('usuarios');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   let filtroEstado = 'Activo';
   let filtroObjetivo = '';
@@ -966,6 +968,5 @@
   document.addEventListener('DOMContentLoaded', renderUsuarios);
   renderUsuarios();
 </script>
-<div id="bottom-nav-container"></div>
 </body>
 </html>

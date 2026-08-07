@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Romeo PT" />
   <link rel="apple-touch-icon" href="1.jpeg" />
+  <link rel="manifest" href="manifest.json" />
 </head>
 <body>
 
@@ -347,12 +348,13 @@
 </div>
 
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
+<div id="bottom-nav-container"></div>
+<script src="persist.js?v=93"></script><script src="shared.js?v=93"></script>
 <script>
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('rutinas');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Creador de Rutinas');
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('rutinas');
-  document.getElementById('toast-container').innerHTML = buildToast();
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('rutinas');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Creador de Rutinas');
+  if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('rutinas');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const MESES_ICONS = { Enero:'❄️',Febrero:'💝',Marzo:'🌿',Abril:'🌸',Mayo:'🌻',Junio:'☀️',Julio:'🏖️',Agosto:'🔥',Septiembre:'🍂',Octubre:'🎃',Noviembre:'🍁',Diciembre:'🎄' };
@@ -2362,6 +2364,5 @@
   };
   // --- FIN LIBRARY EDIT LOGIC ---
 </script>
-<div id="bottom-nav-container"></div>
 </body>
 </html>
