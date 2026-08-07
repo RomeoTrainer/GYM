@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/styles.css?v=78" />
   <meta name="theme-color" content="#00E5A0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Romeo PT" />
   <link rel="apple-touch-icon" href="1.jpeg" />
@@ -230,17 +231,26 @@
   }
 
   function onUsuarioChange() {
-    const uid = selU.value;
+    const uid = selU ? selU.value : null;
     const selR = document.getElementById('sel-rutina');
-    selR.innerHTML = '<option value="">— Seleccionar Rutina —</option>';
-    if (!uid) { document.getElementById('btn-iniciar').disabled = true; previewVacio(); return; }
-    DB.rutinas.filter(r=>r.usuarioId===uid).forEach(r => {
-      const o = document.createElement('option');
-      o.value = r.id; o.textContent = `${r.mes} ${r.anio} — ${r.tipo} (${r.ejercicios.length} ej.)`;
-      selR.appendChild(o);
-    });
-    selR.onchange = () => previewRutina();
-    previewVacio();
+    if (selR) {
+      selR.innerHTML = '<option value="">— Seleccionar Rutina —</option>';
+      if (uid && DB && Array.isArray(DB.rutinas)) {
+        DB.rutinas.filter(r=>r.usuarioId===uid).forEach(r => {
+          const o = document.createElement('option');
+          o.value = r.id; o.textContent = `${r.mes} ${r.anio} — ${r.tipo} (${r.ejercicios ? r.ejercicios.length : 0} ej.)`;
+          selR.appendChild(o);
+        });
+        selR.onchange = () => previewRutina();
+      }
+    }
+    
+    if (uid && activeSessions[uid]) {
+      currentActiveUserId = uid;
+      showCurrentActiveSessionView();
+    } else if (!currentActiveUserId || !activeSessions[currentActiveUserId]) {
+      previewVacio();
+    }
   }
 
   function previewVacio() {
@@ -297,9 +307,13 @@
         }
       }
       currentActiveUserId = localStorage.getItem('romeo_current_active_user_id') || null;
-      if (currentActiveUserId && !activeSessions[currentActiveUserId]) {
-        const uids = Object.keys(activeSessions);
-        currentActiveUserId = uids.length > 0 ? uids[0] : null;
+      const uids = Object.keys(activeSessions);
+      if (uids.length > 0) {
+        if (!currentActiveUserId || !activeSessions[currentActiveUserId]) {
+          currentActiveUserId = uids[0];
+        }
+      } else {
+        currentActiveUserId = null;
       }
     } catch(e) {
       activeSessions = {};
@@ -315,12 +329,10 @@
       } else {
         localStorage.removeItem('romeo_current_active_user_id');
       }
-    } catch(e) {
-      console.warn('[saveActiveSessions] LocalStorage lleno, respaldando en IndexedDB:', e);
-      try {
-        if (typeof PersistDB !== 'undefined') PersistDB.set('romeo_active_sessions', activeSessions);
-      } catch(err2) {}
-    }
+    } catch(e) {}
+    try {
+      if (typeof PersistDB !== 'undefined') PersistDB.set('romeo_active_sessions', activeSessions);
+    } catch(err2) {}
   }
 
   let lastSaveTimestamp = Date.now();
@@ -585,6 +597,7 @@
     }
     
     currentActiveUserId = uid;
+    if (uid && selU) selU.value = uid;
     saveActiveSessions();
     renderActiveSessionsBar();
     showCurrentActiveSessionView();
@@ -1226,6 +1239,7 @@
   window.addEventListener('romeo_db_loaded', () => {
     renderHistorial();
     renderActiveSessionsBar();
+    showCurrentActiveSessionView();
   });
 </script>
 </body>

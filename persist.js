@@ -189,23 +189,13 @@ const PersistDB = (() => {
       console.warn('[PersistDB] IDB save failed:', e);
     }
 
-    // 2. Try localStorage as secondary backup (will fail if > 5MB, we ignore it if IDB succeeded)
+    // 2. Try localStorage as secondary backup (silently ignore if quota exceeded)
     try { 
       localStorage.setItem(key, JSON.stringify(value)); 
       success = true; 
-    } catch (e) {
-      console.warn('[PersistDB] LocalStorage save failed (Quota Exceeded)');
-    }
+    } catch (e) {}
 
-    if (!success) {
-      if (typeof showToast === 'function') {
-        showToast('⚠️ Memoria llena. Usa la opción de elegir carpeta en PC.', 'error');
-      } else {
-        alert('Memoria llena. No se pudo guardar.');
-      }
-      return false;
-    }
-    return true;
+    return success;
   }
 
   async function migrateFromLocalStorage(keys) {
