@@ -626,12 +626,38 @@
     return [];
   }
 
+  function getActiveSession(uid) {
+    if (!uid || !activeSessions) return null;
+    if (activeSessions[uid]) return activeSessions[uid];
+    const sUid = String(uid);
+    for (let key in activeSessions) {
+      if (String(key) === sUid || (activeSessions[key] && String(activeSessions[key].usuarioId) === sUid)) {
+        return activeSessions[key];
+      }
+    }
+    return null;
+  }
+
+  function getResolvedActiveUserId() {
+    if (currentActiveUserId && getActiveSession(currentActiveUserId)) {
+      return currentActiveUserId;
+    }
+    const uids = Object.keys(activeSessions);
+    if (uids.length > 0) {
+      return uids[0];
+    }
+    return null;
+  }
+
   function showCurrentActiveSessionView() {
     const setupSection = document.getElementById('setup-section');
     const sessionSection = document.getElementById('session-section');
     if (!setupSection || !sessionSection) return;
     
-    if (!currentActiveUserId || !activeSessions[currentActiveUserId]) {
+    currentActiveUserId = getResolvedActiveUserId();
+    const s = getActiveSession(currentActiveUserId);
+    
+    if (!currentActiveUserId || !s) {
       setupSection.style.display = 'block';
       sessionSection.style.display = 'none';
       currentActiveUserId = null;
@@ -642,7 +668,6 @@
     setupSection.style.display = 'none';
     sessionSection.style.display = 'block';
     
-    const s = activeSessions[currentActiveUserId];
     const u = (DB.usuarios || []).find(x => String(x.id) === String(s.usuarioId));
     let r = (DB.rutinas || []).find(x => String(x.id) === String(s.rutinaId));
     if (!r && s.usuarioId) {
