@@ -196,20 +196,32 @@
 
   // Populate selects
   const selU = document.getElementById('sel-usuario');
-  DB.usuarios.forEach(u => { const o = document.createElement('option'); o.value = u.id; o.textContent = u.nombre; selU.appendChild(o); });
 
-  // Auto from URL or Active User
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('usuario')) {
-    selU.value = params.get('usuario');
-    onUsuarioChange();
-  } else {
-    const activeUser = getActiveUser();
-    if (activeUser) {
-      selU.value = activeUser.id;
-      onUsuarioChange();
+  function populateUsuarioSelect() {
+    if (!selU) return;
+    const currentVal = selU.value;
+    selU.innerHTML = '<option value="">— Seleccionar Cliente —</option>';
+    if (DB && DB.usuarios) {
+      DB.usuarios.forEach(u => { const o = document.createElement('option'); o.value = u.id; o.textContent = u.nombre; selU.appendChild(o); });
     }
+    const params = new URLSearchParams(window.location.search);
+    const activeUser = getActiveUser();
+    if (currentVal && DB.usuarios && DB.usuarios.some(u => u.id === currentVal)) {
+      selU.value = currentVal;
+    } else if (params.get('usuario') && DB.usuarios && DB.usuarios.some(u => u.id === params.get('usuario'))) {
+      selU.value = params.get('usuario');
+    } else if (activeUser && DB.usuarios && DB.usuarios.some(u => u.id === activeUser.id)) {
+      selU.value = activeUser.id;
+    } else if (DB.usuarios && DB.usuarios.length > 0) {
+      selU.value = DB.usuarios[0].id;
+    }
+    onUsuarioChange();
   }
+
+  populateUsuarioSelect();
+  window.addEventListener('romeo_db_loaded', populateUsuarioSelect);
+
+  const params = new URLSearchParams(window.location.search);
   if (params.get('rutina')) {
     const selR = document.getElementById('sel-rutina');
     setTimeout(() => { selR.value = params.get('rutina'); previewRutina(); }, 50);

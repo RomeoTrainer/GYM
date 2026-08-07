@@ -248,6 +248,21 @@ async function loadDB() {
 }
 loadDB();
 
+window.addEventListener('romeo_db_loaded', function() {
+  const topbarEl = document.getElementById('topbar-container');
+  if (topbarEl) {
+    const titleEl = topbarEl.querySelector('.topbar-title');
+    const title = titleEl ? titleEl.textContent : 'Romeo PT';
+    topbarEl.innerHTML = buildTopbar(title);
+  }
+  const sidebarEl = document.getElementById('sidebar-container');
+  if (sidebarEl) {
+    const activeItem = sidebarEl.querySelector('.nav-item.active');
+    const activePage = activeItem ? activeItem.getAttribute('href').replace('.html', '') : 'dashboard';
+    sidebarEl.innerHTML = buildSidebar(activePage);
+  }
+});
+
 async function saveDB() {
   try {
     localStorage.setItem('romeo_db', JSON.stringify(DB));
@@ -880,7 +895,7 @@ function handleGlobalClientChange(uid) {
   if (u) {
     localStorage.setItem('gym_active_user', JSON.stringify(u));
     // Sincronizar selectores locales en páginas
-    const localSel = document.getElementById('sel-usuario');
+    const localSel = document.getElementById('sel-usuario') || document.getElementById('select-usuario');
     if (localSel) {
       localSel.value = uid;
       if (typeof onUsuarioChange === 'function') {
