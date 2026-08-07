@@ -616,18 +616,19 @@
   }
 
   function switchActiveSession(uid) {
-    const s = getActiveSession(currentActiveUserId);
-    if (s && s.setsState) {
-      for (let sid in s.setsState) {
-        const repsInput = document.getElementById('reps-' + sid);
-        const pesoInput = document.getElementById('peso-' + sid);
-        if (repsInput && !s.setsState[sid].done) s.setsState[sid].reps = parseInt(repsInput.value) || 0;
-        if (pesoInput && !s.setsState[sid].done) s.setsState[sid].peso = parseFloat(pesoInput.value) || 0;
+    if (currentActiveUserId !== null && currentActiveUserId !== undefined) {
+      const prevS = getActiveSession(currentActiveUserId);
+      if (prevS && prevS.setsState) {
+        for (let sid in prevS.setsState) {
+          const repsInput = document.getElementById('reps-' + sid);
+          const pesoInput = document.getElementById('peso-' + sid);
+          if (repsInput && !prevS.setsState[sid].done) prevS.setsState[sid].reps = parseInt(repsInput.value) || 0;
+          if (pesoInput && !prevS.setsState[sid].done) prevS.setsState[sid].peso = parseFloat(pesoInput.value) || 0;
+        }
       }
     }
     
     currentActiveUserId = uid;
-    if (uid && selU) selU.value = uid;
     saveActiveSessions();
     renderActiveSessionsBar();
     showCurrentActiveSessionView();
@@ -657,31 +658,23 @@
     return null;
   }
 
-  function getResolvedActiveUserId() {
-    if (currentActiveUserId === null) return null;
-    if (currentActiveUserId && getActiveSession(currentActiveUserId)) {
-      return currentActiveUserId;
-    }
-    const uids = Object.keys(activeSessions);
-    if (uids.length > 0) {
-      return uids[0];
-    }
-    return null;
-  }
-
   function showCurrentActiveSessionView() {
     const setupSection = document.getElementById('setup-section');
     const sessionSection = document.getElementById('session-section');
     if (!setupSection || !sessionSection) return;
     
-    currentActiveUserId = getResolvedActiveUserId();
-    const s = getActiveSession(currentActiveUserId);
+    let s = getActiveSession(currentActiveUserId);
+    if (!s && currentActiveUserId !== null) {
+      const uids = Object.keys(activeSessions);
+      if (uids.length > 0) {
+        currentActiveUserId = uids[0];
+        s = getActiveSession(currentActiveUserId);
+      }
+    }
     
-    if (!currentActiveUserId || !s) {
+    if (!s || currentActiveUserId === null) {
       setupSection.style.display = 'block';
       sessionSection.style.display = 'none';
-      currentActiveUserId = null;
-      saveActiveSessions();
       return;
     }
     
@@ -711,14 +704,18 @@
     const kcalEl = document.getElementById('meter-kcal');
     if (kcalEl) kcalEl.textContent = Math.round((s.timerSec || 0) / 60 * 7);
     
-    if (ejs.length > 0) {
-      buildChecklist(ejs);
-      if (s.setsTotal > 0 && s.setsCompletados === s.setsTotal) {
-        mostrarCompletion();
+    try {
+      if (ejs.length > 0) {
+        buildChecklist(ejs);
+        if (s.setsTotal > 0 && s.setsCompletados === s.setsTotal) {
+          mostrarCompletion();
+        }
+      } else {
+        const cl = document.getElementById('checklist');
+        if (cl) cl.innerHTML = `<div class="empty-state-sm" style="padding:20px; text-align:center; color:var(--text-muted);"><p>No hay ejercicios disponibles para esta sesión.</p></div>`;
       }
-    } else {
-      const cl = document.getElementById('checklist');
-      if (cl) cl.innerHTML = `<div class="empty-state-sm" style="padding:20px; text-align:center; color:var(--text-muted);"><p>No hay ejercicios disponibles para esta sesión.</p></div>`;
+    } catch(errChecklist) {
+      console.warn('[buildChecklist Error]:', errChecklist);
     }
 
     // Sync floating rest banner specifically for this selected client
