@@ -1,4 +1,4 @@
-const CACHE_NAME = 'romeo-pt-v127';
+const CACHE_NAME = 'romeo-pt-v128';
 const ASSETS = [
   './',
   './index.html',
@@ -49,10 +49,10 @@ self.addEventListener('fetch', (event) => {
                       url.pathname.endsWith('.js') ||
                       url.pathname.endsWith('.css');
 
-  // Estrategia Network-First para HTML, scripts y CSS para garantizar actualización inmediata en la PWA/SPA
+  // Estrategia Network-First para HTML, scripts y CSS para garantizar actualización inmediata en iOS Safari y Android PWA
   if (isCodeOrDoc) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-cache' })
+      fetch(event.request)
         .then(networkResponse => {
           if (networkResponse && networkResponse.status === 200) {
             const responseClone = networkResponse.clone();
