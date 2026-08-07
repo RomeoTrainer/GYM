@@ -2,27 +2,6 @@
    ROMEO PERSONAL TRAINER — Shared JS v2.0
    ============================================================ */
 
-// Auto-limpieza forzada de Service Worker viejo en celulares para cargar v90
-(async function autoPurgeOldSWOnMobile() {
-  const CURRENT_VER = 'v90_force_refresh';
-  if (localStorage.getItem('romeo_sw_purge_ver') !== CURRENT_VER) {
-    localStorage.setItem('romeo_sw_purge_ver', CURRENT_VER);
-    try {
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      }
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (let r of regs) {
-          await r.unregister();
-        }
-      }
-    } catch(e) {}
-    window.location.reload();
-  }
-})();
-
 // ===================== DATABASE =====================
 let DB = {
   usuarios:  [],
@@ -31,6 +10,21 @@ let DB = {
   sesiones:  [],
   packs:     [],
 };
+
+// Carga inmediata síncrona desde localStorage para renderizado instantáneo en celular (0ms sin flashes en 0)
+try {
+  const s = localStorage.getItem('romeo_db');
+  if (s) {
+    const parsed = JSON.parse(s);
+    if (parsed && typeof parsed === 'object') {
+      if (Array.isArray(parsed.usuarios)) DB.usuarios = parsed.usuarios;
+      if (Array.isArray(parsed.rutinas)) DB.rutinas = parsed.rutinas;
+      if (Array.isArray(parsed.progresos)) DB.progresos = parsed.progresos;
+      if (Array.isArray(parsed.sesiones)) DB.sesiones = parsed.sesiones;
+      if (Array.isArray(parsed.packs)) DB.packs = parsed.packs;
+    }
+  }
+} catch(e) {}
 
 // ── Claves que se persisten en archivo ──
 const DB_KEYS = [
@@ -1548,7 +1542,7 @@ async function cargarDatosPorDefecto() {
 // ============================================================
 // PWA: Registro de Service Worker, Modal de Actualización & Modo Offline
 // ============================================================
-const CURRENT_APP_VERSION = 'v123';
+const CURRENT_APP_VERSION = 'v125';
 let _waitingWorker = null;
 let _userTriggeredUpdate = false;
 

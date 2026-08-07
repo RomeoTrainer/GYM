@@ -13,27 +13,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir sw.js dinámicamente inyectando versión automática
+// Servir sw.js directamente sin alterar CACHE_NAME
 app.get('/sw.js', (req, res) => {
   const swPath = path.join(process.cwd(), 'sw.js');
   if (!fs.existsSync(swPath)) return res.status(404).send('Not found');
 
-  let swContent = fs.readFileSync(swPath, 'utf8');
-  let maxTime = 0;
-  const filesToCheck = ['shared.js', 'styles.css', 'rutinas.html', 'index.html', 'usuarios.html', 'entrenamiento.html', 'progreso.html', 'recetas.html', 'macros.html', 'creditos.html', 'persist.js'];
-  
-  filesToCheck.forEach(f => {
-    try {
-      const p = path.join(process.cwd(), f);
-      if (fs.existsSync(p)) {
-        const stat = fs.statSync(p);
-        if (stat.mtimeMs > maxTime) maxTime = stat.mtimeMs;
-      }
-    } catch(e) {}
-  });
-
-  const autoVer = 'auto-' + Math.floor(maxTime);
-  swContent = swContent.replace(/const CACHE_NAME = ['"][^'"]+['"];/, `const CACHE_NAME = 'romeo-pt-${autoVer}';`);
+  const swContent = fs.readFileSync(swPath, 'utf8');
 
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
