@@ -485,16 +485,27 @@ La aplicación es completamente responsive con breakpoints en:
 
 ---
 
-## 🔮 Posibles Mejoras Futuras
+## 📐 Arquitectura, Diagramas UML y Plan de Migración
 
-- [x] **Exportar a PDF** — Imprimir rutinas y reportes de progreso (Ficha de Avance integrada)
-- [x] **Fotos de progreso** — Capturar imágenes de clientes por fecha (Webcam integrada)
-- [x] **Modo offline y PWA** — PWA con Service Worker para instalación en celular/tablet
-- [x] **Sincronización en la nube 24/7** — Integración nativa con Supabase Cloud
-- [x] **Calculadora de macros** — Personalizada por peso y objetivo
-- [x] **Plantillas de rutinas** — Banco de rutinas prediseñadas (Packs de Rutinas y Edición de Biblioteca)
-- [ ] **Estadísticas avanzadas** — Récords personales, PR tracking
-- [ ] **Multi-usuario** — Acceso diferenciado para cliente y entrenador
+El proyecto cuenta con documentación técnica completa y **8 diagramas UML Mermaid** detallados para guiar la migración hacia la arquitectura definitiva en React / Next.js / TypeScript.
+
+> 📄 **Documento Completo de Arquitectura:** [docs/ARCHITECTURE_AND_MIGRATION.md](file:///d:/Documents/GitHub/GYM/docs/ARCHITECTURE_AND_MIGRATION.md)
+
+### Resumen de Diagramas UML Disponibles:
+1. 🏗️ **Arquitectura General PWA & Nube** (Separación de capas en Vercel, Node, Service Worker y Supabase)
+2. 🗄️ **Diagrama Entidad-Relación (ERD)** (Modelado de Usuarios, Rutinas, Sesiones, Progresos y Packs)
+3. 👤 **Diagrama de Casos de Uso** (Funcionalidades principales del Entrenador Personal)
+4. 🔄 **Diagrama de Secuencia de Sincronización Híbrida 24/7** (Carga instantánea 0ms + Polling a Supabase)
+5. ⚡ **Diagrama de Secuencia de Entrenamiento en Vivo** (Cronómetro, Timer de Descanso y Volumen Kg)
+6. 📲 **Diagrama de Estados del Service Worker PWA** (Estrategias Cache-First y Network-First)
+7. 🧩 **Diagrama de Clases y Módulos de Estado** (Estructura de `shared.js`, `persist.js` y `api/index.js`)
+8. 🚀 **Diagrama de Arquitectura Objetivo** (Modelo objetivo en Next.js 14 / Vite + React + Zustand + TypeScript)
+
+### Roadmap de Migración por Fases:
+- **Fase 1**: Creación de rama Git `feature/migration-react-vite` y setup de Vite + React + TypeScript + TailwindCSS.
+- **Fase 2**: Componentización atómica e implementación de tienda Zustand para el estado global (`useGymStore`).
+- **Fase 3**: Migración del motor de Entrenamiento en Vivo, Recharts para Progreso y Calculadora de Macros.
+- **Fase 4**: Pruebas de compatibilidad PWA en iOS Safari y Android Chrome, y migración definitiva a producción.
 
 ---
 

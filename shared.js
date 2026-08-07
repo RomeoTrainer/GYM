@@ -1542,7 +1542,19 @@ async function cargarDatosPorDefecto() {
 // ============================================================
 // PWA: Registro de Service Worker, Modal de Actualización & Modo Offline
 // ============================================================
-const CURRENT_APP_VERSION = 'v129';
+// Detectar conexión a Internet para sincronización automática al salir del gimnasio u reconectarse
+window.addEventListener('online', async () => {
+  showToast('🟢 Conexión restablecida: Sincronizando datos con la nube...', 'success');
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+    await SupabaseSync.sync();
+  }
+});
+
+window.addEventListener('offline', () => {
+  showToast('📡 Modo Offline: Guardando entrenamientos y pesos localmente en el celular', 'warning');
+});
+
+const CURRENT_APP_VERSION = 'v130';
 let _waitingWorker = null;
 let _userTriggeredUpdate = false;
 
