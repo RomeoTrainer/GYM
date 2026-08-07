@@ -303,17 +303,21 @@
           </div>
           <table class="ejercicios-table">
             <thead><tr><th>#</th><th>Ilustración</th><th>Ejercicio</th><th>Grupo</th><th>Series × Reps</th><th>Peso</th><th>Descanso</th></tr></thead>
-            <tbody>${ejs.map((ej,i)=>`<tr>
+            <tbody>${ejs.map((ej,i)=>{
+              const hasValidImg = (typeof ej.imagen === 'string' && ej.imagen.trim().length > 0);
+              const imgSrc = hasValidImg ? (ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen) : '';
+              return `<tr>
               <td style="color:var(--text-muted)">${i+1}</td>
               <td>
-                ${ej.imagen ? `<img src="${ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />` : '<span style="color:var(--text-muted); font-size:11px;">—</span>'}
+                ${hasValidImg ? `<img src="${imgSrc}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />` : '<span style="color:var(--text-muted); font-size:11px;">—</span>'}
               </td>
               <td><strong>${ej.nombre || 'Ejercicio'}</strong></td>
               <td><span class="tag-muscular">${ej.grupo || 'General'}</span></td>
               <td>${ej.series||'—'}</td>
               <td style="font-weight:800;color:var(--pink)">${ej.peso?ej.peso+' kg':'—'}</td>
               <td>${ej.descanso?ej.descanso+'s':'—'}</td>
-            </tr>`).join('')}</tbody>
+            </tr>`;
+            }).join('')}</tbody>
           </table>
           ${r.notes || r.notas?`<div class="rutina-notas" style="margin-top:12px">📝 ${r.notes || r.notas}</div>`:''}
         </div>`;
@@ -838,10 +842,13 @@
         const descanso = parseInt(ej.descanso) || 60;
         
         const ultimoPesoTxt = (ultimoPeso !== null && !isNaN(ultimoPeso)) ? ` &nbsp;·&nbsp; <span style="color:var(--yellow); font-weight:700;">⏱️ Último: ${ultimoPeso} kg</span>` : '';
+        
+        const hasValidImg = (typeof ej.imagen === 'string' && ej.imagen.trim().length > 0);
+        const imgSrc = hasValidImg ? (ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen) : '';
 
         items.push(`<div class="checklist-item ${doneClass}" id="${sid}">
           <div class="check-box" id="cb-${sid}" onclick="toggleSet('${sid}', ${descanso})">${checkChar}</div>
-          ${ej.imagen ? `<img src="${ej.imagen.startsWith('data:') ? ej.imagen : 'img/' + ej.imagen}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--border); margin: 0 10px; flex-shrink: 0;" />` : ''}
+          ${hasValidImg ? `<img src="${imgSrc}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--border); margin: 0 10px; flex-shrink: 0;" />` : ''}
           <div class="check-info" onclick="toggleSet('${sid}', ${descanso})">
             <div class="check-name">${ej.nombre || 'Ejercicio'} — Serie ${ser}/${numSeries}</div>
             <div class="check-detail"><span class="tag-muscular" style="font-size:9px">${ej.grupo || 'General'}</span> &nbsp;·&nbsp; Descanso: ${descanso}s${ultimoPesoTxt}</div>
