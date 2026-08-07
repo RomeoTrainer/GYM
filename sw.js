@@ -1,4 +1,4 @@
-const CACHE_NAME = 'romeo-pt-v97';
+const CACHE_NAME = 'romeo-pt-v98';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,8 @@ const ASSETS = [
   './persist.js',
   './1.jpeg',
   './2.jpeg',
+  './icon-192.png',
+  './icon-512.png',
   './manifest.json'
 ];
 
