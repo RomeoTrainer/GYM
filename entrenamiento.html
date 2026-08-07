@@ -316,7 +316,10 @@
         localStorage.removeItem('romeo_current_active_user_id');
       }
     } catch(e) {
-      console.warn('Error al guardar sesiones activas:', e);
+      console.warn('[saveActiveSessions] LocalStorage lleno, respaldando en IndexedDB:', e);
+      try {
+        if (typeof PersistDB !== 'undefined') PersistDB.set('romeo_active_sessions', activeSessions);
+      } catch(err2) {}
     }
   }
 
