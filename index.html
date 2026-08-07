@@ -276,7 +276,7 @@
 <script src="persist.js?v=93"></script><script src="shared.js?v=93"></script>
 <script>
   if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('dashboard');
-  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Dashboard', '<div style="display:flex; gap:8px;"><label class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; height: 32px; cursor: pointer; margin:0;">📤 Restaurar<input type="file" style="display:none" accept=".json" onchange="cargarBackup(event)"></label><button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; height: 32px; margin:0;" onclick="descargarBackup()">📥 Respaldar</button></div>');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Dashboard');
   if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   // ── Quote ──

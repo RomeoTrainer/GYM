@@ -3174,6 +3174,11 @@ form { padding: 20px 24px; }
     font-size: 11px !important;
     max-width: 85px !important;
   }
+  .topbar-actions button, .topbar-actions .btn-primary, .topbar-actions .btn-secondary {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    min-height: 32px !important;
+  }
   .card {
     padding: 14px !important;
   }

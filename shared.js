@@ -1542,7 +1542,7 @@ async function cargarDatosPorDefecto() {
 // ============================================================
 // PWA: Registro de Service Worker, Modal de Actualización & Modo Offline
 // ============================================================
-const CURRENT_APP_VERSION = 'v128';
+const CURRENT_APP_VERSION = 'v129';
 let _waitingWorker = null;
 let _userTriggeredUpdate = false;
 
