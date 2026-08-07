@@ -2,9 +2,9 @@
    ROMEO PERSONAL TRAINER — Shared JS v2.0
    ============================================================ */
 
-// Auto-limpieza forzada de Service Worker viejo en celulares para cargar v80
+// Auto-limpieza forzada de Service Worker viejo en celulares para cargar v90
 (async function autoPurgeOldSWOnMobile() {
-  const CURRENT_VER = 'v80_clean';
+  const CURRENT_VER = 'v90_force_refresh';
   if (localStorage.getItem('romeo_sw_purge_ver') !== CURRENT_VER) {
     localStorage.setItem('romeo_sw_purge_ver', CURRENT_VER);
     try {
@@ -1363,39 +1363,43 @@ function descargarBackup() {
   downloadAnchorNode.remove();
 }
 
-function cargarBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  if (!confirm("⚠️ ADVERTENCIA: Restaurar un archivo de respaldo reemplazará TODOS tus datos actuales. ¿Estás seguro de que quieres continuar?")) {
-    event.target.value = '';
-    return;
-  }
-  
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data && data.usuarios && data.rutinas) {
-        DB = data;
+async function cargarDatosPorDefecto() {
+  try {
+    showToast('⏳ Cargando clientes del servidor...', 'info');
+    const resp = await fetch('./data/romeo_db.json?v=' + Date.now());
+    if (resp.ok) {
+      const serverData = await resp.json();
+      if (serverData && typeof serverData === 'object' && Array.isArray(serverData.usuarios)) {
+        DB.usuarios = serverData.usuarios || [];
+        DB.rutinas = serverData.rutinas || [];
+        DB.progresos = serverData.progresos || [];
+        DB.sesiones = serverData.sesiones || [];
+        DB.packs = serverData.packs || [];
+
+        try { localStorage.setItem('romeo_backup_just_restored', 'true'); } catch(e){}
         await saveDB();
-        showToast('✅ Copia de seguridad restaurada. Recargando...', 'success');
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        showToast('❌ El archivo no parece ser un respaldo válido', 'error');
+
+        if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+          try { await SupabaseSync.saveCloudData(DB); } catch(syncErr) {}
+        }
+
+        window.dispatchEvent(new Event('romeo_db_loaded'));
+        showToast(`✅ ¡Restaurados ${DB.usuarios.length} clientes correctamente!`, 'success');
+        setTimeout(() => window.location.reload(), 800);
+        return;
       }
-    } catch(err) {
-      showToast('❌ Error leyendo el archivo JSON', 'error');
     }
-    event.target.value = '';
-  };
-  reader.readAsText(file);
+    showToast('⚠️ No se pudo descargar el archivo maestro del servidor', 'error');
+  } catch(err) {
+    console.error('[cargarDatosPorDefecto] Error:', err);
+    showToast('❌ Error al cargar datos del servidor', 'error');
+  }
 }
 
 // ============================================================
 // PWA: Registro de Service Worker, Modal de Actualización & Modo Offline
 // ============================================================
-const CURRENT_APP_VERSION = 'v71';
+const CURRENT_APP_VERSION = 'v91';
 let _waitingWorker = null;
 let _userTriggeredUpdate = false;
 
