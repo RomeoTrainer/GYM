@@ -1491,6 +1491,36 @@ function aplicarActualizacionApp() {
   forzarActualizacionPWA();
 }
 
+let deferredPwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  console.log('[PWA] Evento beforeinstallprompt capturado');
+});
+
+async function instalarPWAApp() {
+  if (deferredPwaPrompt) {
+    try {
+      deferredPwaPrompt.prompt();
+      const choiceResult = await deferredPwaPrompt.userChoice;
+      if (choiceResult.outcome === 'accepted') {
+        showToast('🎉 ¡Aplicación instalada con éxito!', 'success');
+      }
+      deferredPwaPrompt = null;
+    } catch(err) {
+      console.error('[PWA] Error prompt:', err);
+    }
+  } else {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      alert('📱 Para instalar en iPhone / iPad:\n\n1. Toca el botón Compartir (cuadrado con flecha ⬆️ en Safari)\n2. Selecciona "Agregar a inicio" (Add to Home Screen)');
+    } else {
+      alert('📱 Para instalar en tu celular Android / PC:\n\n1. Toca el menú de 3 puntos (⋮) de tu navegador Chrome / Edge\n2. Selecciona "Agregar a la pantalla principal" o "Instalar aplicación"');
+    }
+  }
+}
+
 // Dynamic manifest & PWA Service Worker (skips file:// to avoid Chrome CORS error)
 if (window.location.protocol !== 'file:') {
   if (!document.querySelector('link[rel="manifest"]')) {
