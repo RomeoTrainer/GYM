@@ -595,15 +595,13 @@
   }
 
   function switchActiveSession(uid) {
-    if (currentActiveUserId && activeSessions[currentActiveUserId]) {
-      const s = activeSessions[currentActiveUserId];
-      if (s && s.setsState) {
-        for (let sid in s.setsState) {
-          const repsInput = document.getElementById('reps-' + sid);
-          const pesoInput = document.getElementById('peso-' + sid);
-          if (repsInput && !s.setsState[sid].done) s.setsState[sid].reps = parseInt(repsInput.value) || 0;
-          if (pesoInput && !s.setsState[sid].done) s.setsState[sid].peso = parseFloat(pesoInput.value) || 0;
-        }
+    const s = getActiveSession(currentActiveUserId);
+    if (s && s.setsState) {
+      for (let sid in s.setsState) {
+        const repsInput = document.getElementById('reps-' + sid);
+        const pesoInput = document.getElementById('peso-' + sid);
+        if (repsInput && !s.setsState[sid].done) s.setsState[sid].reps = parseInt(repsInput.value) || 0;
+        if (pesoInput && !s.setsState[sid].done) s.setsState[sid].peso = parseFloat(pesoInput.value) || 0;
       }
     }
     
@@ -781,7 +779,7 @@
 
   function buildChecklist(ejercicios) {
     const cl = document.getElementById('checklist');
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (!s || !cl || !Array.isArray(ejercicios)) return;
     
     s.setsTotal = 0;
@@ -852,7 +850,7 @@
   }
 
   function toggleSet(sid, descanso) {
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (!s) return;
     
     const item = document.getElementById(sid);
@@ -900,7 +898,7 @@
   }
 
   function onSetInputChange(sid) {
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (!s || !s.setsState[sid]) return;
     const repsInput = document.getElementById('reps-' + sid);
     const pesoInput = document.getElementById('peso-' + sid);
@@ -911,7 +909,7 @@
   }
 
   function recalculateMetrics() {
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (!s) return;
     
     let compl = 0;
@@ -953,11 +951,11 @@
   }
 
   function iniciarDescanso(secs) {
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (!s) return;
     s.restEndTimestamp = Date.now() + (secs * 1000);
     saveActiveSessions();
-    const u = (DB.usuarios || []).find(x => x.id === currentActiveUserId);
+    const u = (DB.usuarios || []).find(x => String(x.id) === String(s.usuarioId));
     const banner = document.getElementById('rest-banner');
     if (banner) banner.style.display = 'block';
     const countdown = document.getElementById('rest-countdown');
@@ -967,7 +965,7 @@
   }
 
   function cancelarDescanso() {
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (s && s.restEndTimestamp) {
       delete s.restEndTimestamp;
       saveActiveSessions();
@@ -977,7 +975,7 @@
   }
 
   function mostrarCompletion() {
-    const s = activeSessions[currentActiveUserId];
+    const s = getActiveSession(currentActiveUserId);
     if (!s) return;
     const cl = document.getElementById('checklist');
     const timeStr = document.getElementById('timer-display').textContent;
