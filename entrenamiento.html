@@ -553,8 +553,8 @@
     const ahora = Date.now();
     let html = uids.map(uid => {
       const s = activeSessions[uid];
-      const u = DB.usuarios.find(x => x.id === uid);
-      const r = DB.rutinas.find(x => x.id === s.rutinaId);
+      const u = (DB.usuarios || []).find(x => String(x.id) === String(uid));
+      const r = (DB.rutinas || []).find(x => String(x.id) === String(s.rutinaId));
       const activeClass = (uid === currentActiveUserId) ? 'active' : '';
       const avCl = u ? avatarClass(u.nombre) : 'av-0';
       const ini = u ? initials(u.nombre) : '?';
@@ -729,6 +729,29 @@
     renderActiveSessionsBar();
     showCurrentActiveSessionView();
     showToast('🏋️ ¡Sesión iniciada! ¡Dale con todo!', 'info');
+  }
+
+  function obtenerUltimoPesoEjercicio(nombreEjercicio, usuarioId) {
+    if (!DB || !Array.isArray(DB.sesiones) || !nombreEjercicio || !usuarioId) return null;
+    const normName = nombreEjercicio.trim().toLowerCase();
+    
+    for (let i = DB.sesiones.length - 1; i >= 0; i--) {
+      const s = DB.sesiones[i];
+      if (s && String(s.usuarioId) === String(usuarioId) && Array.isArray(s.ejercicios)) {
+        for (let ej of s.ejercicios) {
+          if (ej && ej.nombre && ej.nombre.trim().toLowerCase() === normName) {
+            if (Array.isArray(ej.series)) {
+              for (let ser of ej.series) {
+                if (ser && ser.completado && parseFloat(ser.peso) > 0) {
+                  return parseFloat(ser.peso);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
   function buildChecklist(ejercicios) {
