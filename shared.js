@@ -226,7 +226,14 @@ async function saveDB() {
   try {
     localStorage.setItem('romeo_db', JSON.stringify(DB));
   } catch(e) {
-    console.warn('[saveDB] LocalStorage save warning:', e);
+    console.warn('[saveDB] LocalStorage lleno, guardando versión liviana:', e);
+    try {
+      const dbLight = JSON.parse(JSON.stringify(DB));
+      if (dbLight.progresos && Array.isArray(dbLight.progresos)) {
+        dbLight.progresos.forEach(p => { delete p.foto; delete p.foto1; delete p.foto2; });
+      }
+      localStorage.setItem('romeo_db', JSON.stringify(dbLight));
+    } catch(err2) {}
   }
   await PersistDB.set('romeo_db', DB);
   window.dispatchEvent(new Event('romeo_db_loaded'));
@@ -458,7 +465,7 @@ function cargarBackup(event) {
         DB.sesiones = Array.isArray(parsed.sesiones) ? parsed.sesiones : DB.sesiones;
         DB.packs = Array.isArray(parsed.packs) ? parsed.packs : DB.packs;
         
-        localStorage.setItem('romeo_backup_just_restored', 'true');
+        try { localStorage.setItem('romeo_backup_just_restored', 'true'); } catch(err){}
         await saveDB();
 
         if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
@@ -646,7 +653,7 @@ function importDatabaseJSON(event) {
       DB.sesiones = Array.isArray(importedData.sesiones) ? importedData.sesiones : DB.sesiones;
       DB.packs = Array.isArray(importedData.packs) ? importedData.packs : DB.packs;
 
-      localStorage.setItem('romeo_backup_just_restored', 'true');
+      try { localStorage.setItem('romeo_backup_just_restored', 'true'); } catch(err){}
       await saveDB();
 
       if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
