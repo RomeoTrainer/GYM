@@ -217,8 +217,9 @@
     const activeUser = getActiveUser();
     
     // Si hay una sesión activa en curso, priorizar el usuario de esa sesión activa
-    if (currentActiveUserId && activeSessions[currentActiveUserId] && DB.usuarios.some(u => String(u.id) === String(currentActiveUserId))) {
-      selU.value = currentActiveUserId;
+    if (currentActiveUserId && getActiveSession(currentActiveUserId)) {
+      const activeS = getActiveSession(currentActiveUserId);
+      selU.value = activeS.usuarioId || currentActiveUserId;
     } else if (currentVal && DB.usuarios && DB.usuarios.some(u => String(u.id) === String(currentVal))) {
       selU.value = currentVal;
     } else if (params.get('usuario') && DB.usuarios && DB.usuarios.some(u => String(u.id) === String(params.get('usuario')))) {
@@ -228,11 +229,23 @@
     } else if (DB.usuarios && DB.usuarios.length > 0) {
       selU.value = DB.usuarios[0].id;
     }
-    onUsuarioChange();
+    
+    const uid = selU.value;
+    const selR = document.getElementById('sel-rutina');
+    if (selR) {
+      selR.innerHTML = '<option value="">— Seleccionar Rutina —</option>';
+      if (uid && DB && Array.isArray(DB.rutinas)) {
+        DB.rutinas.filter(r=> String(r.usuarioId) === String(uid)).forEach(r => {
+          const o = document.createElement('option');
+          o.value = r.id; o.textContent = `${r.mes || ''} ${r.anio || ''} — ${r.tipo || 'Rutina'} (${getEjerciciosArray(r).length} ej.)`;
+          selR.appendChild(o);
+        });
+        selR.onchange = () => previewRutina();
+      }
+    }
   }
 
   populateUsuarioSelect();
-  window.addEventListener('romeo_db_loaded', populateUsuarioSelect);
 
   const params = new URLSearchParams(window.location.search);
   if (params.get('rutina')) {
@@ -255,10 +268,11 @@
       }
     }
     
-    if (uid && activeSessions[uid]) {
-      currentActiveUserId = uid;
+    if (uid && getActiveSession(uid)) {
+      switchActiveSession(uid);
+    } else if (currentActiveUserId === null) {
+      previewRutina();
     }
-    showCurrentActiveSessionView();
   }
 
   function previewVacio() {
@@ -555,7 +569,8 @@
       const s = activeSessions[uid];
       const u = (DB.usuarios || []).find(x => String(x.id) === String(uid));
       const r = (DB.rutinas || []).find(x => String(x.id) === String(s.rutinaId));
-      const activeClass = (uid === currentActiveUserId) ? 'active' : '';
+      const isCurrentActive = (currentActiveUserId !== null && String(s.usuarioId) === String(currentActiveUserId));
+      const activeClass = isCurrentActive ? 'active' : '';
       const avCl = u ? avatarClass(u.nombre) : 'av-0';
       const ini = u ? initials(u.nombre) : '?';
       const m = Math.floor(s.timerSec/60).toString().padStart(2,'0');
@@ -585,8 +600,10 @@
       `;
     }).join('');
     
+    const isAddingNew = (currentActiveUserId === null);
+    const addActiveClass = isAddingNew ? 'active' : '';
     html += `
-      <div class="live-session-tab-add" onclick="switchActiveSession(null)">
+      <div class="live-session-tab-add ${addActiveClass}" onclick="switchActiveSession(null)" style="${isAddingNew ? 'border:1.5px solid var(--pink); background:rgba(255,60,172,0.15);' : ''}">
         <span>➕ Nueva Sesión</span>
       </div>
     `;
@@ -637,6 +654,7 @@
   }
 
   function getResolvedActiveUserId() {
+    if (currentActiveUserId === null) return null;
     if (currentActiveUserId && getActiveSession(currentActiveUserId)) {
       return currentActiveUserId;
     }
@@ -1322,6 +1340,7 @@
 
   // Escuchar cambios de base de datos desde otras pestañas para actualizar la UI
   window.addEventListener('romeo_db_loaded', () => {
+    populateUsuarioSelect();
     renderHistorial();
     renderActiveSessionsBar();
     showCurrentActiveSessionView();
