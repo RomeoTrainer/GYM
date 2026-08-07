@@ -250,13 +250,14 @@
   </div>
 </div>
 
+<div id="bottom-nav-container"></div>
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
+<script src="persist.js?v=104"></script><script src="shared.js?v=104"></script>
 <script>
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('recetas');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Nutrición y Recetas');
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('recetas');
-  document.getElementById('toast-container').innerHTML = buildToast();
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('recetas');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Nutrición y Recetas');
+  if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('recetas');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   // ===================== CUSTOM RECIPES (localStorage) =====================
   let RECETAS_CUSTOM = [];
@@ -764,6 +765,5 @@
     if (typeof renderGrid === 'function') renderGrid(ALL_RECETAS);
   });
 </script>
-<div id="bottom-nav-container"></div>
 </body>
 </html>

@@ -212,13 +212,14 @@
   </div>
 </div>
 
+<div id="bottom-nav-container"></div>
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
+<script src="persist.js?v=104"></script><script src="shared.js?v=104"></script>
 <script>
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('progreso');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Seguimiento Corporal');
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('progreso');
-  document.getElementById('toast-container').innerHTML = buildToast();
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('progreso');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Seguimiento Corporal');
+  if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('progreso');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   const sel = document.getElementById('sel-usuario');
   
@@ -1553,6 +1554,5 @@
     if (sel && sel.value) renderProgreso(sel.value);
   });
 </script>
-<div id="bottom-nav-container"></div>
 </body>
 </html>

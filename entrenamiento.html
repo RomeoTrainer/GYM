@@ -179,16 +179,17 @@
   <button class="btn-ghost" style="margin-top:8px;font-size:11px" onclick="cancelarDescanso()">Saltar descanso</button>
 </div>
 
+<div id="bottom-nav-container"></div>
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
+<script src="persist.js?v=104"></script><script src="shared.js?v=104"></script>
 <script>
   // Constante para ordenamiento cronológico de meses en la sesión
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('entrenamiento');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Entrenamiento en Vivo');
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('entrenamiento');
-  document.getElementById('toast-container').innerHTML = buildToast();
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('entrenamiento');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Entrenamiento en Vivo');
+  if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('entrenamiento');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   // Quotes
   const q = getQuoteOfDay();
@@ -1224,6 +1225,5 @@
     renderActiveSessionsBar();
   });
 </script>
-<div id="bottom-nav-container"></div>
 </body>
 </html>

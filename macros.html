@@ -111,13 +111,14 @@
   </div>
 </main>
 
+<div id="bottom-nav-container"></div>
 <div id="toast-container"></div>
-<script src="persist.js?v=90"></script><script src="shared.js?v=90"></script>
+<script src="persist.js?v=104"></script><script src="shared.js?v=104"></script>
 <script>
-  document.getElementById('sidebar-container').innerHTML = buildSidebar('macros');
-  document.getElementById('topbar-container').innerHTML = buildTopbar('Macronutrientes');
-  document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('macros');
-  document.getElementById('toast-container').innerHTML = buildToast();
+  if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('macros');
+  if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Macronutrientes');
+  if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('macros');
+  if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   const sel = document.getElementById('sel-usuario');
   
@@ -584,6 +585,5 @@
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
   }
 </script>
-<div id="bottom-nav-container"></div>
 </body>
 </html>
