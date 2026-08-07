@@ -145,18 +145,20 @@ const SupabaseSync = (() => {
         return;
       }
 
-      if (cloudUsers > 0 && localUsers === 0) {
-        // Cargar desde la nube únicamente si la base de datos local está completamente vacía
+      if (cloudUsers > localUsers) {
+        // Cargar datos de la nube si la nube tiene mas clientes registrados
         DB.usuarios = cloudDB.usuarios || [];
         DB.rutinas = cloudDB.rutinas || [];
         DB.progresos = cloudDB.progresos || [];
         DB.sesiones = cloudDB.sesiones || [];
         DB.packs = cloudDB.packs || [];
+        if (Array.isArray(DB.usuarios)) {
+          DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+        }
         try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
         await PersistDB.set('romeo_db', DB);
         window.dispatchEvent(new Event('romeo_db_loaded'));
-      } else if (localUsers > 0) {
-        // Si hay datos locales (clientes restaurados/creados), asegurar que se suban a la nube
+      } else if (localUsers > cloudUsers) {
         await saveCloudData(DB);
       }
     } else {
@@ -186,23 +188,52 @@ const SupabaseSync = (() => {
 })();
 
 async function loadDB() {
-  let loadedFromLocal = false;
-  try {
-    const s = localStorage.getItem('romeo_db');
-    if (s) {
-      const parsed = JSON.parse(s);
-      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.usuarios) && parsed.usuarios.length > 0) {
-        DB.usuarios = parsed.usuarios || [];
-        DB.rutinas = parsed.rutinas || [];
-        DB.progresos = parsed.progresos || [];
-        DB.sesiones = parsed.sesiones || [];
-        DB.packs = parsed.packs || [];
-        loadedFromLocal = true;
-      }
-    }
-  } catch(e) {}
+  let loadedFromCloud = false;
 
-  if (!loadedFromLocal) {
+  // 1. Prioridad Máxima: Sincronizar inmediatamente con la Nube de Supabase (CRUD 24/7)
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+    try {
+      const cloud = await SupabaseSync.fetchCloudData();
+      if (cloud && cloud.content && typeof cloud.content === 'object') {
+        const cloudDB = cloud.content;
+        if (Array.isArray(cloudDB.usuarios) && cloudDB.usuarios.length > 0) {
+          DB.usuarios = cloudDB.usuarios || [];
+          DB.rutinas = cloudDB.rutinas || [];
+          DB.progresos = cloudDB.progresos || [];
+          DB.sesiones = cloudDB.sesiones || [];
+          DB.packs = cloudDB.packs || [];
+          if (Array.isArray(DB.usuarios)) {
+            DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+          }
+          try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
+          await PersistDB.set('romeo_db', DB);
+          loadedFromCloud = true;
+        }
+      }
+    } catch(e) {
+      console.warn('[loadDB] Fallback Supabase Cloud error:', e);
+    }
+  }
+
+  // 2. Si no hay conexión o la nube está vacía, cargar desde almacenamiento local
+  if (!loadedFromCloud) {
+    try {
+      const s = localStorage.getItem('romeo_db');
+      if (s) {
+        const parsed = JSON.parse(s);
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.usuarios) && parsed.usuarios.length > 0) {
+          DB.usuarios = parsed.usuarios || [];
+          DB.rutinas = parsed.rutinas || [];
+          DB.progresos = parsed.progresos || [];
+          DB.sesiones = parsed.sesiones || [];
+          DB.packs = parsed.packs || [];
+          loadedFromCloud = true;
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!loadedFromCloud) {
     try {
       const p = await PersistDB.get('romeo_db');
       if (p && typeof p === 'object' && Array.isArray(p.usuarios) && p.usuarios.length > 0) {
@@ -211,12 +242,13 @@ async function loadDB() {
         DB.progresos = p.progresos || [];
         DB.sesiones = p.sesiones || [];
         DB.packs = p.packs || [];
-        loadedFromLocal = true;
+        loadedFromCloud = true;
       }
     } catch(e) {}
   }
 
-  if (!loadedFromLocal) {
+  // 3. Fallback inicial: si no hay datos en nube ni local, cargar semillas oficiales del servidor
+  if (!loadedFromCloud) {
     try {
       const resp = await fetch('./data/romeo_db.json?v=' + Date.now());
       if (resp.ok) {
@@ -229,7 +261,9 @@ async function loadDB() {
           DB.packs = serverData.packs || [];
           try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
           await PersistDB.set('romeo_db', DB);
-          loadedFromLocal = true;
+          if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+            await SupabaseSync.saveCloudData(DB);
+          }
         }
       }
     } catch(e) {
@@ -237,17 +271,14 @@ async function loadDB() {
     }
   }
 
-  if (!DB.sesiones) DB.sesiones = [];
-  if (!DB.packs) DB.packs = [];
   if (Array.isArray(DB.usuarios)) {
     DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
   }
 
-  window.dispatchEvent(new Event('romeo_db_loaded'));
+  if (!DB.sesiones) DB.sesiones = [];
+  if (!DB.packs) DB.packs = [];
 
-  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
-    setTimeout(() => { SupabaseSync.sync(); }, 300);
-  }
+  window.dispatchEvent(new Event('romeo_db_loaded'));
 }
 loadDB();
 
@@ -869,17 +900,33 @@ async function subirDatosSupabase() {
 
 async function descargarDatosSupabase() {
   if (!SupabaseSync.isConfigured()) { showToast('Configura Supabase primero', 'error'); return; }
-  showToast('⬇️ Consultando Supabase...', 'info');
+  showToast('⬇️ Descargando datos desde la nube Supabase...', 'info');
   const cloud = await SupabaseSync.fetchCloudData();
-  if (cloud && cloud.content) {
-    DB.usuarios = cloud.content.usuarios || [];
-    DB.rutinas = cloud.content.rutinas || [];
-    DB.progresos = cloud.content.progresos || [];
-    DB.sesiones = cloud.content.sesiones || [];
-    DB.packs = cloud.content.packs || [];
-    await saveDB();
-    showToast('✅ Datos descargados de la nube Supabase', 'success');
-    closeModal('modal-supabase-config');
+  if (cloud && cloud.content && typeof cloud.content === 'object') {
+    const cloudDB = cloud.content;
+    const usersCount = Array.isArray(cloudDB.usuarios) ? cloudDB.usuarios.length : 0;
+    if (usersCount > 0) {
+      DB.usuarios = cloudDB.usuarios || [];
+      DB.rutinas = cloudDB.rutinas || [];
+      DB.progresos = cloudDB.progresos || [];
+      DB.sesiones = cloudDB.sesiones || [];
+      DB.packs = cloudDB.packs || [];
+
+      if (Array.isArray(DB.usuarios)) {
+        DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+      }
+
+      try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
+      await PersistDB.set('romeo_db', DB);
+
+      window.dispatchEvent(new Event('romeo_db_loaded'));
+      showToast(`✅ ¡Descargados ${usersCount} clientes desde la nube Supabase! Recargando...`, 'success');
+      closeModal('modal-supabase-config');
+      setTimeout(() => window.location.reload(), 800);
+      return;
+    } else {
+      showToast('⚠️ La nube contiene 0 clientes guardados', 'warning');
+    }
   } else {
     showToast('⚠️ No se encontraron datos en la nube Supabase', 'error');
   }
