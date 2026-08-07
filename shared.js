@@ -137,8 +137,16 @@ const SupabaseSync = (() => {
       const cloudUsers = Array.isArray(cloudDB.usuarios) ? cloudDB.usuarios.length : 0;
       const localUsers = Array.isArray(DB.usuarios) ? DB.usuarios.length : 0;
 
-      if (cloudUsers > localUsers) {
-        // Cloud has more data -> update local
+      const justRestored = localStorage.getItem('romeo_backup_just_restored') === 'true';
+      if (justRestored) {
+        localStorage.removeItem('romeo_backup_just_restored');
+        await saveCloudData(DB);
+        updateDotStatus(true);
+        return;
+      }
+
+      if (cloudUsers > 0 && localUsers === 0) {
+        // Cargar desde la nube únicamente si la base de datos local está completamente vacía
         DB.usuarios = cloudDB.usuarios || [];
         DB.rutinas = cloudDB.rutinas || [];
         DB.progresos = cloudDB.progresos || [];
@@ -147,12 +155,11 @@ const SupabaseSync = (() => {
         try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
         await PersistDB.set('romeo_db', DB);
         window.dispatchEvent(new Event('romeo_db_loaded'));
-      } else if (localUsers > cloudUsers || (localUsers > 0 && cloudUsers === 0)) {
-        // Local has more data -> upload local DB to Supabase
+      } else if (localUsers > 0) {
+        // Si hay datos locales (clientes restaurados/creados), asegurar que se suban a la nube
         await saveCloudData(DB);
       }
     } else {
-      // If cloud table is empty but we have local DB, auto upload local DB
       if (DB && (DB.usuarios.length > 0 || DB.rutinas.length > 0)) {
         await saveCloudData(DB);
       }
@@ -450,9 +457,18 @@ function cargarBackup(event) {
         DB.progresos = Array.isArray(parsed.progresos) ? parsed.progresos : DB.progresos;
         DB.sesiones = Array.isArray(parsed.sesiones) ? parsed.sesiones : DB.sesiones;
         DB.packs = Array.isArray(parsed.packs) ? parsed.packs : DB.packs;
+        
+        localStorage.setItem('romeo_backup_just_restored', 'true');
         await saveDB();
+
+        if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+          try {
+            await SupabaseSync.saveCloudData(DB);
+          } catch(syncErr) {}
+        }
+
         showToast('📤 Respaldo restaurado correctamente. Recargando...', 'success');
-        setTimeout(() => window.location.reload(), 1000);
+        setTimeout(() => window.location.reload(), 700);
       } else {
         showToast('⚠️ Archivo de respaldo no válido', 'error');
       }
@@ -624,26 +640,30 @@ function importDatabaseJSON(event) {
         throw new Error('Formato JSON inválido');
       }
 
-      if (importedData.usuarios && Array.isArray(importedData.usuarios)) DB.usuarios = importedData.usuarios;
-      if (importedData.rutinas && Array.isArray(importedData.rutinas)) DB.rutinas = importedData.rutinas;
-      if (importedData.progresos && Array.isArray(importedData.progresos)) DB.progresos = importedData.progresos;
-      if (importedData.sesiones && Array.isArray(importedData.sesiones)) DB.sesiones = importedData.sesiones;
-      if (importedData.packs && Array.isArray(importedData.packs)) DB.packs = importedData.packs;
+      DB.usuarios = Array.isArray(importedData.usuarios) ? importedData.usuarios : DB.usuarios;
+      DB.rutinas = Array.isArray(importedData.rutinas) ? importedData.rutinas : DB.rutinas;
+      DB.progresos = Array.isArray(importedData.progresos) ? importedData.progresos : DB.progresos;
+      DB.sesiones = Array.isArray(importedData.sesiones) ? importedData.sesiones : DB.sesiones;
+      DB.packs = Array.isArray(importedData.packs) ? importedData.packs : DB.packs;
 
-      try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(err){}
+      localStorage.setItem('romeo_backup_just_restored', 'true');
+      await saveDB();
 
       if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
         try {
-          await SupabaseSync.syncAll();
-        } catch(syncErr) {}
+          await SupabaseSync.saveCloudData(DB);
+        } catch(syncErr) {
+          console.warn('[Import] Error subiendo a Supabase:', syncErr);
+        }
       }
 
+      const count = DB.usuarios.length;
       window.dispatchEvent(new Event('romeo_db_loaded'));
-      if (typeof showToast === 'function') showToast('✅ Copia de seguridad restaurada exitosamente', 'success');
+      if (typeof showToast === 'function') showToast(`✅ ${count} cliente(s) y datos restaurados exitosamente`, 'success');
 
       setTimeout(() => {
         window.location.reload();
-      }, 600);
+      }, 700);
 
     } catch (err) {
       alert('Error al leer el archivo de backup: ' + err.message);
