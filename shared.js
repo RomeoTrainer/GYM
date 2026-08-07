@@ -187,28 +187,68 @@ const SupabaseSync = (() => {
   };
 })();
 
+function mergeCloudAndLocal(cloudArr, localArr) {
+  if (!Array.isArray(cloudArr)) cloudArr = [];
+  if (!Array.isArray(localArr)) localArr = [];
+  
+  const map = new Map();
+  cloudArr.forEach(item => {
+    if (item && item.id !== undefined && item.id !== null) map.set(String(item.id), item);
+  });
+  localArr.forEach(item => {
+    if (!item || item.id === undefined || item.id === null) return;
+    const key = String(item.id);
+    if (!map.has(key)) {
+      map.set(key, item);
+    } else {
+      const cloudItem = map.get(key);
+      const localTime = new Date(item.actualizado || item.creado || 0).getTime();
+      const cloudTime = new Date(cloudItem.actualizado || cloudItem.creado || 0).getTime();
+      if (localTime > cloudTime) {
+        map.set(key, item);
+      }
+    }
+  });
+  return Array.from(map.values());
+}
+
 async function loadDB() {
   let loadedFromCloud = false;
 
-  // 1. Prioridad Máxima: Sincronizar inmediatamente con la Nube de Supabase (CRUD 24/7)
+  // 1. Prioridad Máxima: Sincronizar e integrar con la Nube de Supabase (CRUD 24/7)
   if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
     try {
       const cloud = await SupabaseSync.fetchCloudData();
       if (cloud && cloud.content && typeof cloud.content === 'object') {
         const cloudDB = cloud.content;
-        if (Array.isArray(cloudDB.usuarios) && cloudDB.usuarios.length > 0) {
+        
+        let localDB = null;
+        try {
+          const s = localStorage.getItem('romeo_db');
+          if (s) localDB = JSON.parse(s);
+        } catch(e){}
+        
+        if (localDB && typeof localDB === 'object') {
+          DB.usuarios = mergeCloudAndLocal(cloudDB.usuarios, localDB.usuarios);
+          DB.rutinas = mergeCloudAndLocal(cloudDB.rutinas, localDB.rutinas);
+          DB.progresos = mergeCloudAndLocal(cloudDB.progresos, localDB.progresos);
+          DB.sesiones = mergeCloudAndLocal(cloudDB.sesiones, localDB.sesiones);
+          DB.packs = mergeCloudAndLocal(cloudDB.packs, localDB.packs);
+        } else {
           DB.usuarios = cloudDB.usuarios || [];
           DB.rutinas = cloudDB.rutinas || [];
           DB.progresos = cloudDB.progresos || [];
           DB.sesiones = cloudDB.sesiones || [];
           DB.packs = cloudDB.packs || [];
-          if (Array.isArray(DB.usuarios)) {
-            DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
-          }
-          try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
-          await PersistDB.set('romeo_db', DB);
-          loadedFromCloud = true;
         }
+
+        if (Array.isArray(DB.usuarios)) {
+          DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+        }
+        try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
+        await PersistDB.set('romeo_db', DB);
+        await SupabaseSync.saveCloudData(DB);
+        loadedFromCloud = true;
       }
     } catch(e) {
       console.warn('[loadDB] Fallback Supabase Cloud error:', e);
@@ -314,7 +354,7 @@ async function saveDB() {
   window.dispatchEvent(new Event('romeo_db_loaded'));
 
   if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
-    SupabaseSync.saveCloudData(DB);
+    await SupabaseSync.saveCloudData(DB);
   }
 }
 
@@ -1484,7 +1524,7 @@ async function cargarDatosPorDefecto() {
 // ============================================================
 // PWA: Registro de Service Worker, Modal de Actualización & Modo Offline
 // ============================================================
-const CURRENT_APP_VERSION = 'v121';
+const CURRENT_APP_VERSION = 'v122';
 let _waitingWorker = null;
 let _userTriggeredUpdate = false;
 
