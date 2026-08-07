@@ -187,6 +187,12 @@
   // Constante para ordenamiento cronológico de meses en la sesión
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+  // ======= MULTI-SESSION STATE =======
+  let activeSessions = {}; 
+  let currentActiveUserId = null;
+  let globalTimerInterval = null;
+  let restInterval = null, restSec = 0;
+
   if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('entrenamiento');
   if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Entrenamiento en Vivo');
   if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('entrenamiento');
@@ -288,12 +294,6 @@
         ${r.notes || r.notas?`<div class="rutina-notas" style="margin-top:12px">📝 ${r.notes || r.notas}</div>`:''}
       </div>`;
   }
-
-  // ======= MULTI-SESSION STATE =======
-  let activeSessions = {}; // key: usuarioId -> { usuarioId, rutinaId, timerSec, setsCompletados, setsTotal, volumenKg, setsState: { [sid]: { done, reps, peso } } }
-  let currentActiveUserId = null;
-  let globalTimerInterval = null;
-  let restInterval = null, restSec = 0;
 
   function loadActiveSessions() {
     try {
