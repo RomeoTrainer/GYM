@@ -672,9 +672,9 @@ function buildTopbar(title, actionsHtml = '') {
   `).join('');
 
   const clientSelector = DB.usuarios.length > 0 ? `
-    <div class="topbar-client-selector">
-      <label for="global-client-select">👤 Cliente:</label>
-      <select id="global-client-select" onchange="handleGlobalClientChange(this.value)">
+    <div class="topbar-client-selector" style="display:inline-flex; align-items:center; gap:4px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:4px 8px; flex-shrink:0;">
+      <label for="global-client-select" style="font-size:11px; font-weight:700; color:var(--pink); cursor:pointer;">👤</label>
+      <select id="global-client-select" onchange="handleGlobalClientChange(this.value)" style="background:none; border:none; color:var(--text-primary); font-size:11px; font-weight:600; outline:none; max-width:110px; cursor:pointer;">
         ${optionsHtml}
       </select>
     </div>
@@ -688,16 +688,16 @@ function buildTopbar(title, actionsHtml = '') {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <div class="topbar-title">${title}</div>
-    <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+    <div style="display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:nowrap; flex-shrink:0;">
       ${clientSelector}
-      <button type="button" onclick="exportDatabaseJSON()" class="btn-ghost" style="padding:6px 10px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:4px;" title="Descargar Copia de Seguridad JSON">
-        📦 Backup
+      <button type="button" onclick="exportDatabaseJSON()" class="btn-ghost" style="padding:6px 8px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:4px;" title="Descargar Copia de Seguridad JSON">
+        📦<span class="topbar-btn-text" style="font-size:11px"> Backup</span>
       </button>
-      <button type="button" onclick="abrirModalSupabase()" class="btn-ghost" style="padding:6px 10px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:5px;" title="Base de Datos 24/7 en la Nube Supabase">
-        ☁️ Nube <span id="supabase-status-dot" style="width:8px;height:8px;border-radius:50%;background:${cloudStatusDot};display:inline-block;"></span>
+      <button type="button" onclick="abrirModalSupabase()" class="btn-ghost" style="padding:6px 8px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:4px;" title="Base de Datos 24/7 en la Nube Supabase">
+        ☁️<span class="topbar-btn-text" style="font-size:11px"> Nube</span> <span id="supabase-status-dot" style="width:7px;height:7px;border-radius:50%;background:${cloudStatusDot};display:inline-block;"></span>
       </button>
-      <button type="button" onclick="forzarActualizacionPWA()" class="btn-ghost" style="padding:6px 10px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:4px;" title="Forzar actualización de PWA en celulares/tablets">
-        ⚡ Actualizar
+      <button type="button" onclick="forzarActualizacionPWA()" class="btn-ghost" style="padding:6px 8px; font-size:12px; border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; gap:4px;" title="Forzar actualización de PWA en celulares/tablets">
+        ⚡<span class="topbar-btn-text" style="font-size:11px"> Actualizar</span>
       </button>
       <div class="topbar-actions">${actionsHtml}</div>
     </div>
@@ -1542,7 +1542,7 @@ async function cargarDatosPorDefecto() {
 // ============================================================
 // PWA: Registro de Service Worker, Modal de Actualización & Modo Offline
 // ============================================================
-const CURRENT_APP_VERSION = 'v126';
+const CURRENT_APP_VERSION = 'v127';
 let _waitingWorker = null;
 let _userTriggeredUpdate = false;
 
