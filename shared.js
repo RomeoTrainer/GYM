@@ -131,43 +131,67 @@ const SupabaseSync = (() => {
 
   async function sync() {
     if (!isConfigured()) return;
-    const cloud = await fetchCloudData();
-    if (cloud && cloud.content && typeof cloud.content === 'object') {
-      const cloudDB = cloud.content;
-      const cloudUsers = Array.isArray(cloudDB.usuarios) ? cloudDB.usuarios.length : 0;
-      const localUsers = Array.isArray(DB.usuarios) ? DB.usuarios.length : 0;
+    try {
+      const cloud = await fetchCloudData();
+      if (cloud && cloud.content && typeof cloud.content === 'object') {
+        const cloudDB = cloud.content;
 
-      const justRestored = localStorage.getItem('romeo_backup_just_restored') === 'true';
-      if (justRestored) {
-        localStorage.removeItem('romeo_backup_just_restored');
-        await saveCloudData(DB);
-        updateDotStatus(true);
-        return;
-      }
-
-      if (cloudUsers > localUsers) {
-        // Cargar datos de la nube si la nube tiene mas clientes registrados
-        DB.usuarios = cloudDB.usuarios || [];
-        DB.rutinas = cloudDB.rutinas || [];
-        DB.progresos = cloudDB.progresos || [];
-        DB.sesiones = cloudDB.sesiones || [];
-        DB.packs = cloudDB.packs || [];
-        if (Array.isArray(DB.usuarios)) {
-          DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+        const justRestored = localStorage.getItem('romeo_backup_just_restored') === 'true';
+        if (justRestored) {
+          localStorage.removeItem('romeo_backup_just_restored');
+          await saveCloudData(DB);
+          updateDotStatus(true);
+          return;
         }
-        try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
-        await PersistDB.set('romeo_db', DB);
-        window.dispatchEvent(new Event('romeo_db_loaded'));
-      } else if (localUsers > cloudUsers) {
+
+        const mergedUsuarios = mergeCloudAndLocal(cloudDB.usuarios, DB.usuarios);
+        const mergedRutinas = mergeCloudAndLocal(cloudDB.rutinas, DB.rutinas);
+        const mergedProgresos = mergeCloudAndLocal(cloudDB.progresos, DB.progresos);
+        const mergedSesiones = mergeCloudAndLocal(cloudDB.sesiones, DB.sesiones);
+        const mergedPacks = mergeCloudAndLocal(cloudDB.packs, DB.packs);
+
+        const hasChanges = (
+          mergedUsuarios.length !== DB.usuarios.length ||
+          mergedRutinas.length !== DB.rutinas.length ||
+          mergedSesiones.length !== DB.sesiones.length ||
+          JSON.stringify(mergedUsuarios) !== JSON.stringify(DB.usuarios)
+        );
+
+        if (hasChanges) {
+          DB.usuarios = mergedUsuarios;
+          DB.rutinas = mergedRutinas;
+          DB.progresos = mergedProgresos;
+          DB.sesiones = mergedSesiones;
+          DB.packs = mergedPacks;
+          
+          if (Array.isArray(DB.usuarios)) {
+            DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+          }
+          try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
+          await PersistDB.set('romeo_db', DB);
+          window.dispatchEvent(new Event('romeo_db_loaded'));
+        }
+
         await saveCloudData(DB);
+      } else {
+        if (DB && (DB.usuarios.length > 0 || DB.rutinas.length > 0)) {
+          await saveCloudData(DB);
+        }
       }
-    } else {
-      if (DB && (DB.usuarios.length > 0 || DB.rutinas.length > 0)) {
-        await saveCloudData(DB);
-      }
+      updateDotStatus(true);
+    } catch(errSync) {
+      console.warn('[SupabaseSync] Background sync error:', errSync);
     }
-    updateDotStatus(true);
   }
+
+  // Polling automático en segundo plano cada 15 segundos para sincronización en tiempo real entre celulares
+  setInterval(() => {
+    try {
+      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+        SupabaseSync.sync();
+      }
+    } catch(e) {}
+  }, 15000);
 
   function updateDotStatus(online = isConfigured()) {
     const dot = document.getElementById('supabase-status-dot');
@@ -1524,7 +1548,7 @@ async function cargarDatosPorDefecto() {
 // ============================================================
 // PWA: Registro de Service Worker, Modal de Actualización & Modo Offline
 // ============================================================
-const CURRENT_APP_VERSION = 'v122';
+const CURRENT_APP_VERSION = 'v123';
 let _waitingWorker = null;
 let _userTriggeredUpdate = false;
 
