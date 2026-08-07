@@ -239,6 +239,9 @@ async function loadDB() {
 
   if (!DB.sesiones) DB.sesiones = [];
   if (!DB.packs) DB.packs = [];
+  if (Array.isArray(DB.usuarios)) {
+    DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+  }
 
   window.dispatchEvent(new Event('romeo_db_loaded'));
 

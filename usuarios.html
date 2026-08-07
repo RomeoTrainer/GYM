@@ -35,10 +35,10 @@
     <!-- Status Filter chips -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
       <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-right:8px;">Estado:</span>
-      <button class="filter-btn active filter-status-btn" onclick="setFiltroEstado('Activo', this)">🟢 Activos</button>
+      <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Activo', this)">🟢 Activos</button>
       <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Pausado', this)">🟡 Pausados</button>
       <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Inactivo', this)">🔴 Inactivos</button>
-      <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Todos', this)">📁 Todos</button>
+      <button class="filter-btn active filter-status-btn" onclick="setFiltroEstado('Todos', this)">📁 Todos</button>
     </div>
 
     <!-- Objective Filter chips -->
@@ -207,7 +207,7 @@
   if (document.getElementById('bottom-nav-container')) document.getElementById('bottom-nav-container').innerHTML = buildBottomNav('usuarios');
   if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
-  let filtroEstado = 'Activo';
+  let filtroEstado = 'Todos';
   let filtroObjetivo = '';
 
   function setFiltroEstado(val, btn) {
