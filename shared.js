@@ -527,38 +527,7 @@ function descargarBackup() {
 }
 
 function cargarBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    try {
-      const parsed = JSON.parse(e.target.result);
-      if (parsed && typeof parsed === 'object') {
-        DB.usuarios = Array.isArray(parsed.usuarios) ? parsed.usuarios : DB.usuarios;
-        DB.rutinas = Array.isArray(parsed.rutinas) ? parsed.rutinas : DB.rutinas;
-        DB.progresos = Array.isArray(parsed.progresos) ? parsed.progresos : DB.progresos;
-        DB.sesiones = Array.isArray(parsed.sesiones) ? parsed.sesiones : DB.sesiones;
-        DB.packs = Array.isArray(parsed.packs) ? parsed.packs : DB.packs;
-        
-        try { localStorage.setItem('romeo_backup_just_restored', 'true'); } catch(err){}
-        await saveDB();
-
-        if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
-          try {
-            await SupabaseSync.saveCloudData(DB);
-          } catch(syncErr) {}
-        }
-
-        showToast('📤 Respaldo restaurado correctamente. Recargando...', 'success');
-        setTimeout(() => window.location.reload(), 700);
-      } else {
-        showToast('⚠️ Archivo de respaldo no válido', 'error');
-      }
-    } catch(err) {
-      showToast('⚠️ Error al leer el archivo JSON', 'error');
-    }
-  };
-  reader.readAsText(file);
+  importDatabaseJSON(event);
 }
 
 // ===================== SIDEBAR =====================
@@ -769,7 +738,7 @@ function abrirModalBackupDB() {
         <button onclick="document.getElementById('modal-backup-db').remove()" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
       </div>
       <div style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">
-        Exporta una copia completa de tus datos o restáurala desde un archivo JSON descargado previamente.
+        Exporta una copia completa de tus datos, restáurala desde un archivo o pega directamente el texto del JSON.
       </div>
       <div style="display:flex; flex-direction:column; gap:10px;">
         <button class="btn-primary" onclick="exportDatabaseJSON()" style="width:100%; justify-content:center; padding:12px;">
@@ -779,9 +748,75 @@ function abrirModalBackupDB() {
           📤 Restaurar / Importar Archivo JSON
           <input type="file" accept=".json" onchange="importDatabaseJSON(event)" style="display:none;" />
         </label>
+        <button class="btn-secondary" onclick="abrirModalPegarJSON()" style="width:100%; justify-content:center; padding:10px; border-color:var(--purple); color:var(--purple);">
+          📋 Pegar Código Respaldo JSON
+        </button>
       </div>
     </div>`;
   document.body.appendChild(modal);
+}
+
+function abrirModalPegarJSON() {
+  let modal = document.getElementById('modal-pegar-json');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'modal-pegar-json';
+  modal.className = 'modal-overlay active';
+  modal.style.zIndex = '10001';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:560px; width:92%; background:#0c0f17; border:2px solid #00E5A0; border-radius:18px; padding:20px; color:#fff; font-family:'Sora',sans-serif;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; color:#00E5A0; font-size:16px; font-weight:800;">📋 Pegar Texto del Respaldo JSON</h3>
+        <button type="button" onclick="document.getElementById('modal-pegar-json').remove()" style="background:none; border:none; color:#AAA; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="font-size:12px; color:#AAA; margin-bottom:12px; line-height:1.4;">
+        Abre tu archivo <code>romeo_backup_2026-07-31.json</code> en cualquier bloc de notas, copia todo su texto y pégalo en la casilla de abajo:
+      </div>
+      <textarea id="json-paste-area" rows="8" placeholder='Pega aquí el contenido JSON empezando con {"usuarios": [...]}' style="width:100%; background:#161b26; border:1px solid rgba(255,255,255,0.15); color:#00E5A0; font-family:monospace; font-size:11px; padding:10px; border-radius:8px; box-sizing:border-box; margin-bottom:14px; resize:vertical;"></textarea>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" onclick="document.getElementById('modal-pegar-json').remove()" class="btn-secondary" style="padding:8px 14px; font-size:12px;">Cancelar</button>
+        <button type="button" onclick="procesarJSONPegado()" class="btn-primary" style="background:linear-gradient(135deg, #00E5A0, #00A86B); color:#000; font-weight:900; padding:10px 18px; font-size:12px; border:none; border-radius:8px; cursor:pointer;">⚡ Inyectar a la Nube Supabase</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function procesarJSONPegado() {
+  const area = document.getElementById('json-paste-area');
+  const text = area ? area.value.trim() : '';
+  if (!text) { showToast('⚠️ Pega el texto JSON primero', 'error'); return; }
+  try {
+    const importedData = JSON.parse(text);
+    if (!importedData || typeof importedData !== 'object') throw new Error('Formato JSON no válido');
+
+    DB.usuarios = Array.isArray(importedData.usuarios) ? importedData.usuarios : DB.usuarios;
+    DB.rutinas = Array.isArray(importedData.rutinas) ? importedData.rutinas : DB.rutinas;
+    DB.progresos = Array.isArray(importedData.progresos) ? importedData.progresos : DB.progresos;
+    DB.sesiones = Array.isArray(importedData.sesiones) ? importedData.sesiones : DB.sesiones;
+    DB.packs = Array.isArray(importedData.packs) ? importedData.packs : DB.packs;
+
+    if (Array.isArray(DB.usuarios)) {
+      DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
+    }
+
+    try { localStorage.setItem('romeo_backup_just_restored', 'true'); } catch(err){}
+    await saveDB();
+
+    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+      await SupabaseSync.saveCloudData(DB);
+    }
+
+    const count = DB.usuarios.length;
+    const modal = document.getElementById('modal-pegar-json');
+    if (modal) modal.remove();
+
+    window.dispatchEvent(new Event('romeo_db_loaded'));
+    showToast(`✅ ¡Inyectados ${count} clientes a la Nube Supabase! Recargando...`, 'success');
+    setTimeout(() => window.location.reload(), 800);
+  } catch(err) {
+    showToast('❌ El texto pegado no es un JSON válido: ' + err.message, 'error');
+  }
 }
 
 // ===================== SUPABASE MODAL & UI FUNCTIONS =====================

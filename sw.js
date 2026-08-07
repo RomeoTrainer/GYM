@@ -1,4 +1,4 @@
-const CACHE_NAME = 'romeo-pt-v100';
+const CACHE_NAME = 'romeo-pt-v101';
 const ASSETS = [
   './',
   './index.html',
