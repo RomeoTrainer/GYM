@@ -605,12 +605,25 @@
     showCurrentActiveSessionView();
   }
 
+  function getEjerciciosArray(r) {
+    if (!r || !r.ejercicios) return [];
+    if (Array.isArray(r.ejercicios)) return r.ejercicios;
+    if (typeof r.ejercicios === 'string') {
+      try {
+        const parsed = JSON.parse(r.ejercicios);
+        if (Array.isArray(parsed)) return parsed;
+      } catch(e){}
+    }
+    return [];
+  }
+
   function showCurrentActiveSessionView() {
     const setupSection = document.getElementById('setup-section');
     const sessionSection = document.getElementById('session-section');
+    if (!setupSection || !sessionSection) return;
     
     if (!currentActiveUserId || !activeSessions[currentActiveUserId]) {
-      setupSection.style.display = '';
+      setupSection.style.display = 'block';
       sessionSection.style.display = 'none';
       currentActiveUserId = null;
       saveActiveSessions();
@@ -618,31 +631,40 @@
     }
     
     setupSection.style.display = 'none';
-    sessionSection.style.display = '';
+    sessionSection.style.display = 'block';
     
     const s = activeSessions[currentActiveUserId];
-    const u = DB.usuarios.find(x => x.id === s.usuarioId);
-    let r = DB.rutinas.find(x => x.id === s.rutinaId);
+    const u = (DB.usuarios || []).find(x => x.id === s.usuarioId);
+    let r = (DB.rutinas || []).find(x => x.id === s.rutinaId);
     if (!r && s.usuarioId) {
-      r = DB.rutinas.find(x => x.usuarioId === s.usuarioId);
+      r = (DB.rutinas || []).find(x => x.usuarioId === s.usuarioId);
       if (r) s.rutinaId = r.id;
     }
     
-    document.getElementById('session-title').textContent = r ? `${r.mes || ''} ${r.anio || ''} — ${r.tipo || 'Rutina'}`.trim() : 'Sesión Activa';
-    document.getElementById('session-meta').textContent = u ? `📍 ${u.nombre} · ${r && Array.isArray(r.ejercicios) ? r.ejercicios.length : 0} ejercicios` : '';
+    const ejs = getEjerciciosArray(r);
+    
+    const titleEl = document.getElementById('session-title');
+    if (titleEl) titleEl.textContent = r ? `${r.mes || ''} ${r.anio || ''} — ${r.tipo || 'Rutina'}`.trim() : 'Sesión Activa';
+    
+    const metaEl = document.getElementById('session-meta');
+    if (metaEl) metaEl.textContent = u ? `📍 ${u.nombre} · ${ejs.length} ejercicios` : '';
     
     const m = Math.floor((s.timerSec || 0)/60).toString().padStart(2,'0');
     const sec = ((s.timerSec || 0)%60).toString().padStart(2,'0');
-    document.getElementById('timer-display').textContent = `${m}:${sec}`;
-    document.getElementById('meter-kcal').textContent = Math.round((s.timerSec || 0) / 60 * 7);
+    const timerEl = document.getElementById('timer-display');
+    if (timerEl) timerEl.textContent = `${m}:${sec}`;
     
-    if (r && Array.isArray(r.ejercicios) && r.ejercicios.length > 0) {
-      buildChecklist(r.ejercicios);
+    const kcalEl = document.getElementById('meter-kcal');
+    if (kcalEl) kcalEl.textContent = Math.round((s.timerSec || 0) / 60 * 7);
+    
+    if (ejs.length > 0) {
+      buildChecklist(ejs);
       if (s.setsTotal > 0 && s.setsCompletados === s.setsTotal) {
         mostrarCompletion();
       }
     } else {
-      document.getElementById('checklist').innerHTML = `<div class="empty-state-sm"><p>No hay ejercicios disponibles para esta sesión.</p></div>`;
+      const cl = document.getElementById('checklist');
+      if (cl) cl.innerHTML = `<div class="empty-state-sm" style="padding:20px; text-align:center; color:var(--text-muted);"><p>No hay ejercicios disponibles para esta sesión.</p></div>`;
     }
 
     // Sync floating rest banner specifically for this selected client
