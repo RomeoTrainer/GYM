@@ -245,6 +245,12 @@ async function loadDB() {
           const s = localStorage.getItem('romeo_db');
           if (s) localDB = JSON.parse(s);
         } catch(e){}
+        if (!localDB || !Array.isArray(localDB.usuarios) || localDB.usuarios.length === 0) {
+          try {
+            const p = await PersistDB.get('romeo_db');
+            if (p && typeof p === 'object') localDB = p;
+          } catch(e){}
+        }
         
         if (localDB && typeof localDB === 'object') {
           DB.usuarios = mergeCloudAndLocal(cloudDB.usuarios, localDB.usuarios);
@@ -365,8 +371,17 @@ async function saveDB() {
       if (dbLight.progresos && Array.isArray(dbLight.progresos)) {
         dbLight.progresos.forEach(p => { delete p.foto; delete p.foto1; delete p.foto2; });
       }
+      if (dbLight.usuarios && Array.isArray(dbLight.usuarios)) {
+        dbLight.usuarios.forEach(u => {
+          delete u.fotoIniFrente; delete u.fotoIniPerfil; delete u.fotoIniEspalda;
+          delete u.fotoFinFrente; delete u.fotoFinPerfil; delete u.fotoFinEspalda;
+          delete u.fotoPerfil; delete u.fotoEspalda;
+        });
+      }
       localStorage.setItem('romeo_db', JSON.stringify(dbLight));
-    } catch(err2) {}
+    } catch(err2) {
+      console.warn('[saveDB] Error en guardado liviano fallback:', err2);
+    }
   }
   await PersistDB.set('romeo_db', DB);
   window.dispatchEvent(new Event('romeo_db_loaded'));
