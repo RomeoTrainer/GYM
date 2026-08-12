@@ -373,9 +373,23 @@
     openModal('modal-usuario');
   }
 
+  let _savingUsuario = false;
   async function guardarUsuario(e) {
     e.preventDefault();
+    if (_savingUsuario) return;
+    const form = e.target;
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const origText = submitBtn ? submitBtn.innerHTML : '';
+
     try {
+      _savingUsuario = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.pointerEvents = 'none';
+        submitBtn.innerHTML = '⏳ Guardando...';
+      }
+
       const id = document.getElementById('uid').value;
       const nombre = document.getElementById('u-nombre').value.trim();
       if (!nombre) {
@@ -435,6 +449,14 @@
     } catch (err) {
       console.error('[guardarUsuario] Error al guardar cliente:', err);
       showToast('❌ Error al guardar cliente', 'error');
+    } finally {
+      _savingUsuario = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+        submitBtn.innerHTML = origText;
+      }
     }
   }
 
@@ -447,6 +469,7 @@
       isDanger: true
     });
     if (!ok) return;
+    if (typeof addDeletedId === 'function') addDeletedId(id);
     DB.usuarios = DB.usuarios.filter(u=>u.id!==id);
     DB.rutinas = DB.rutinas.filter(r=>r.usuarioId!==id);
     DB.progresos = DB.progresos.filter(p=>p.usuarioId!==id);
@@ -815,20 +838,45 @@
     openModal('modal-sesion');
   }
 
-  function guardarSesion(e) {
+  let _savingSesion = false;
+  async function guardarSesion(e) {
     e.preventDefault();
-    const uid = document.getElementById('sesion-uid').value;
-    const sesion = {
-      id: genId(), usuarioId: uid,
-      fecha: document.getElementById('s-fecha').value,
-      hora: document.getElementById('s-hora').value,
-      rutinaId: document.getElementById('s-rutina').value || null,
-      notas: document.getElementById('s-notas').value,
-      estado: 'pendiente',
-    };
-    DB.sesiones.push(sesion);
-    saveDB(); closeModal('modal-sesion'); renderUsuarios();
-    showToast('📅 Sesión programada correctamente');
+    if (_savingSesion) return;
+    const form = e.target;
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const origText = submitBtn ? submitBtn.innerHTML : '';
+    try {
+      _savingSesion = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.pointerEvents = 'none';
+        submitBtn.innerHTML = '⏳ Guardando...';
+      }
+      const uid = document.getElementById('sesion-uid').value;
+      const sesion = {
+        id: genId(), usuarioId: uid,
+        fecha: document.getElementById('s-fecha').value,
+        hora: document.getElementById('s-hora').value,
+        rutinaId: document.getElementById('s-rutina').value || null,
+        notas: document.getElementById('s-notas').value,
+        estado: 'pendiente',
+      };
+      DB.sesiones.push(sesion);
+      await saveDB(); closeModal('modal-sesion'); renderUsuarios();
+      showToast('📅 Sesión programada correctamente');
+    } catch(err) {
+      console.error('[guardarSesion] Error:', err);
+      showToast('❌ Error al guardar sesión', 'error');
+    } finally {
+      _savingSesion = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+        submitBtn.innerHTML = origText;
+      }
+    }
   }
 
   // ======= HISTORIAL DE ENTRENAMIENTOS EN PERFIL =======

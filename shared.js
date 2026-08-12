@@ -222,9 +222,69 @@ const SupabaseSync = (() => {
   };
 })();
 
+function getDeletedIds() {
+  try {
+    const s = localStorage.getItem('romeo_deleted_ids');
+    return s ? new Set(JSON.parse(s)) : new Set();
+  } catch(e) { return new Set(); }
+}
+
+function addDeletedId(id) {
+  if (!id) return;
+  try {
+    const set = getDeletedIds();
+    set.add(String(id));
+    localStorage.setItem('romeo_deleted_ids', JSON.stringify(Array.from(set)));
+  } catch(e) {}
+}
+
+function dedupeUsuarios(list) {
+  if (!Array.isArray(list)) return [];
+  const deletedSet = getDeletedIds();
+  const seenIds = new Set();
+  const seenNames = new Map();
+  const result = [];
+
+  for (const u of list) {
+    if (!u || u.id === undefined || u.id === null) continue;
+    const uid = String(u.id);
+    if (deletedSet.has(uid)) continue; // Omitir IDs explícitamente eliminados
+    if (seenIds.has(uid)) continue;
+
+    const normName = (u.nombre || '').trim().toLowerCase();
+    const normTel = (u.telefono || '').trim().replace(/\D/g, '');
+
+    // Clave única por nombre y teléfono/email
+    const key = normName && normTel ? `${normName}_${normTel}` : (normName || uid);
+
+    if (seenNames.has(key)) {
+      const existing = seenNames.get(key);
+      const existingTime = new Date(existing.actualizado || existing.creado || 0).getTime();
+      const currentTime = new Date(u.actualizado || u.creado || 0).getTime();
+      if (currentTime > existingTime) {
+        // Reemplazar duplicado viejo por la versión más reciente
+        const idx = result.findIndex(x => String(x.id) === String(existing.id));
+        if (idx >= 0) result[idx] = u;
+        seenNames.set(key, u);
+        seenIds.add(uid);
+      }
+      continue;
+    }
+
+    seenNames.set(key, u);
+    seenIds.add(uid);
+    result.push(u);
+  }
+  return result;
+}
+
 function mergeCloudAndLocal(cloudArr, localArr) {
   if (!Array.isArray(cloudArr)) cloudArr = [];
   if (!Array.isArray(localArr)) localArr = [];
+
+  const deletedSet = getDeletedIds();
+  cloudArr = cloudArr.filter(x => x && !deletedSet.has(String(x.id)));
+  localArr = localArr.filter(x => x && !deletedSet.has(String(x.id)));
 
   const map = new Map();
   // 1. Agregar elementos de la nube
@@ -248,7 +308,9 @@ function mergeCloudAndLocal(cloudArr, localArr) {
       }
     }
   });
-  return Array.from(map.values());
+
+  const merged = Array.from(map.values());
+  return dedupeUsuarios(merged);
 }
 
 async function loadDB() {
@@ -383,6 +445,9 @@ window.addEventListener('romeo_db_loaded', function() {
 });
 
 async function saveDB() {
+  if (DB && Array.isArray(DB.usuarios)) {
+    DB.usuarios = dedupeUsuarios(DB.usuarios);
+  }
   try {
     localStorage.setItem('romeo_db', JSON.stringify(DB));
   } catch(e) {

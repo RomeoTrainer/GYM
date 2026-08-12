@@ -982,40 +982,65 @@
     blockCount = 0;
   }
 
+  let _savingRutina = false;
   async function guardarRutina(e) {
     e.preventDefault();
-    const uid = selU.value;
-    const id = document.getElementById('r-id').value;
-    const ejercicios = [];
-    document.querySelectorAll('#blocks-container .exercise-block').forEach(row => {
-      const nombre = row.querySelector('.blk-nombre').value.trim(); if (!nombre) return;
-      ejercicios.push({ 
-        nombre, 
-        grupo: row.querySelector('.blk-grupo').value, 
-        imagen: row.querySelector('.blk-imagen').dataset.base64 || null,
-        series: row.querySelector('.blk-series').value.trim(), 
-        peso: row.querySelector('.blk-peso').value.trim(), 
-        descanso: row.querySelector('.blk-descanso').value.trim(), 
-        notas: row.querySelector('.blk-notas').value.trim() 
+    if (_savingRutina) return;
+    const form = e.target;
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const origText = submitBtn ? submitBtn.innerHTML : '';
+    try {
+      _savingRutina = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.pointerEvents = 'none';
+        submitBtn.innerHTML = '⏳ Guardando...';
+      }
+      const uid = selU.value;
+      const id = document.getElementById('r-id').value;
+      const ejercicios = [];
+      document.querySelectorAll('#blocks-container .exercise-block').forEach(row => {
+        const nombre = row.querySelector('.blk-nombre').value.trim(); if (!nombre) return;
+        ejercicios.push({ 
+          nombre, 
+          grupo: row.querySelector('.blk-grupo').value, 
+          imagen: row.querySelector('.blk-imagen').dataset.base64 || null,
+          series: row.querySelector('.blk-series').value.trim(), 
+          peso: row.querySelector('.blk-peso').value.trim(), 
+          descanso: row.querySelector('.blk-descanso').value.trim(), 
+          notas: row.querySelector('.blk-notas').value.trim() 
+        });
       });
-    });
-    const rutina = {
-      id: id || genId(), usuarioId: uid,
-      nombre: document.getElementById('r-nombre').value.trim(),
-      mes: document.getElementById('r-mes').value,
-      anio: parseInt(document.getElementById('r-anio').value),
-      tipo: document.getElementById('r-tipo').value,
-      grupo: document.getElementById('r-grupo').value,
-      dias: document.getElementById('r-dias').value,
-      pesoIni: parseFloat(document.getElementById('r-peso-ini').value) || null,
-      pesoFin: parseFloat(document.getElementById('r-peso-fin').value) || null,
-      ejercicios, notas: document.getElementById('r-notas').value.trim(),
-      creado: new Date().toISOString(),
-    };
-    if (id) { const i = DB.rutinas.findIndex(x=>x.id===id); if(i>=0) DB.rutinas[i]=rutina; }
-    else DB.rutinas.push(rutina);
-    await saveDB(); closeModal('modal-editor'); renderRutinas(uid);
-    showToast('✅ Rutina guardada correctamente');
+      const rutina = {
+        id: id || genId(), usuarioId: uid,
+        nombre: document.getElementById('r-nombre').value.trim(),
+        mes: document.getElementById('r-mes').value,
+        anio: parseInt(document.getElementById('r-anio').value),
+        tipo: document.getElementById('r-tipo').value,
+        grupo: document.getElementById('r-grupo').value,
+        dias: document.getElementById('r-dias').value,
+        pesoIni: parseFloat(document.getElementById('r-peso-ini').value) || null,
+        pesoFin: parseFloat(document.getElementById('r-peso-fin').value) || null,
+        ejercicios, notas: document.getElementById('r-notas').value.trim(),
+        creado: new Date().toISOString(),
+      };
+      if (id) { const i = DB.rutinas.findIndex(x=>x.id===id); if(i>=0) DB.rutinas[i]=rutina; }
+      else DB.rutinas.push(rutina);
+      await saveDB(); closeModal('modal-editor'); renderRutinas(uid);
+      showToast('✅ Rutina guardada correctamente');
+    } catch(err) {
+      console.error('[guardarRutina] Error:', err);
+      showToast('❌ Error al guardar rutina', 'error');
+    } finally {
+      _savingRutina = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+        submitBtn.innerHTML = origText;
+      }
+    }
   }
 
   async function eliminarRutina(id) {
