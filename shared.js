@@ -140,9 +140,18 @@ const SupabaseSync = (() => {
     }
   }
 
+  let _lastLocalWriteTime = 0;
+
   async function sync() {
     if (!isConfigured()) return;
     try {
+      // Si hubo una modificación local en los últimos 60s, priorizar empujar la data local a Supabase sin descargar
+      if (Date.now() - _lastLocalWriteTime < 60000) {
+        await saveCloudData(DB);
+        updateDotStatus(true);
+        return;
+      }
+
       const cloud = await fetchCloudData();
       if (cloud && cloud.content && typeof cloud.content === 'object') {
         const cloudDB = cloud.content;
@@ -218,7 +227,8 @@ const SupabaseSync = (() => {
     fetchCloudData,
     saveCloudData,
     sync,
-    updateDotStatus
+    updateDotStatus,
+    markLocalWrite: () => { _lastLocalWriteTime = Date.now(); }
   };
 })();
 
@@ -287,23 +297,24 @@ function mergeCloudAndLocal(cloudArr, localArr) {
   localArr = localArr.filter(x => x && !deletedSet.has(String(x.id)));
 
   const map = new Map();
-  // 1. Agregar elementos de la nube
-  cloudArr.forEach(item => {
+  // 1. Priorizar datos LOCALES como base autoritativa
+  localArr.forEach(item => {
     if (item && item.id !== undefined && item.id !== null) {
       map.set(String(item.id), item);
     }
   });
-  // 2. Fusionar con elementos locales manteniendo la versión más reciente
-  localArr.forEach(item => {
+
+  // 2. Fusionar con la Nube solo si el registro en la nube es ESTRICTAMENTE más reciente
+  cloudArr.forEach(item => {
     if (!item || item.id === undefined || item.id === null) return;
     const key = String(item.id);
     if (!map.has(key)) {
       map.set(key, item);
     } else {
-      const cloudItem = map.get(key);
-      const localTime = new Date(item.actualizado || item.creado || 0).getTime();
-      const cloudTime = new Date(cloudItem.actualizado || cloudItem.creado || 0).getTime();
-      if (localTime >= cloudTime) {
+      const localItem = map.get(key);
+      const localTime = new Date(localItem.actualizado || localItem.creado || 0).getTime();
+      const cloudTime = new Date(item.actualizado || item.creado || 0).getTime();
+      if (cloudTime > localTime) {
         map.set(key, item);
       }
     }
@@ -445,6 +456,9 @@ window.addEventListener('romeo_db_loaded', function() {
 });
 
 async function saveDB() {
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.markLocalWrite) {
+    SupabaseSync.markLocalWrite();
+  }
   if (DB && Array.isArray(DB.usuarios)) {
     DB.usuarios = dedupeUsuarios(DB.usuarios);
   }
