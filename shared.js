@@ -95,9 +95,26 @@ const SupabaseSync = (() => {
     if (!isConfigured()) return false;
     const { url } = getConfig();
     try {
+      let contentToSave = dbContent;
+      const strLen = JSON.stringify(dbContent).length;
+      if (strLen > 1200000) {
+        // Si excede 1.2MB, sanitizar imágenes base64 secundarias para evitar rechazos HTTP 413
+        const lightCopy = JSON.parse(JSON.stringify(dbContent));
+        if (lightCopy.progresos && Array.isArray(lightCopy.progresos)) {
+          lightCopy.progresos.forEach(p => { delete p.foto; delete p.foto1; delete p.foto2; });
+        }
+        if (lightCopy.usuarios && Array.isArray(lightCopy.usuarios)) {
+          lightCopy.usuarios.forEach(u => {
+            delete u.fotoIniFrente; delete u.fotoIniPerfil; delete u.fotoIniEspalda;
+            delete u.fotoFinFrente; delete u.fotoFinPerfil; delete u.fotoFinEspalda;
+          });
+        }
+        contentToSave = lightCopy;
+      }
+
       const payload = [{
         id: 'romeo_db',
-        content: dbContent,
+        content: contentToSave,
         updated_at: new Date().toISOString()
       }];
       const resp = await fetch(`${url}/rest/v1/romeo_store`, {
@@ -208,11 +225,15 @@ const SupabaseSync = (() => {
 function mergeCloudAndLocal(cloudArr, localArr) {
   if (!Array.isArray(cloudArr)) cloudArr = [];
   if (!Array.isArray(localArr)) localArr = [];
-  
+
   const map = new Map();
+  // 1. Agregar elementos de la nube
   cloudArr.forEach(item => {
-    if (item && item.id !== undefined && item.id !== null) map.set(String(item.id), item);
+    if (item && item.id !== undefined && item.id !== null) {
+      map.set(String(item.id), item);
+    }
   });
+  // 2. Fusionar con elementos locales manteniendo la versión más reciente
   localArr.forEach(item => {
     if (!item || item.id === undefined || item.id === null) return;
     const key = String(item.id);
@@ -222,7 +243,7 @@ function mergeCloudAndLocal(cloudArr, localArr) {
       const cloudItem = map.get(key);
       const localTime = new Date(item.actualizado || item.creado || 0).getTime();
       const cloudTime = new Date(cloudItem.actualizado || cloudItem.creado || 0).getTime();
-      if (localTime > cloudTime) {
+      if (localTime >= cloudTime) {
         map.set(key, item);
       }
     }
