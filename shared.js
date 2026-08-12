@@ -297,23 +297,32 @@ function mergeCloudAndLocal(cloudArr, localArr) {
   localArr = localArr.filter(x => x && !deletedSet.has(String(x.id)));
 
   const map = new Map();
-  // 1. Priorizar datos LOCALES como base autoritativa
+  let maxLocalTime = 0;
+
+  // 1. Cargar datos LOCALES como base autoritativa y obtener el timestamp más reciente
   localArr.forEach(item => {
     if (item && item.id !== undefined && item.id !== null) {
       map.set(String(item.id), item);
+      const t = new Date(item.actualizado || item.creado || 0).getTime();
+      if (t > maxLocalTime) maxLocalTime = t;
     }
   });
 
-  // 2. Fusionar con la Nube solo si el registro en la nube es ESTRICTAMENTE más reciente
+  // 2. Fusionar con la Nube solo si el registro es nuevo/reciente o estrictamente más actualizado
   cloudArr.forEach(item => {
     if (!item || item.id === undefined || item.id === null) return;
     const key = String(item.id);
+    const cloudTime = new Date(item.actualizado || item.creado || 0).getTime();
+
     if (!map.has(key)) {
-      map.set(key, item);
+      // Si no existe localmente, solo agregarlo si es un elemento verdaderamente nuevo (creado recientemente)
+      // Si la fecha del elemento en la nube es más antigua que nuestra actividad local, es un elemento viejo eliminado localmente
+      if (maxLocalTime === 0 || cloudTime >= maxLocalTime - 43200000) { // creado recientemente
+        map.set(key, item);
+      }
     } else {
       const localItem = map.get(key);
       const localTime = new Date(localItem.actualizado || localItem.creado || 0).getTime();
-      const cloudTime = new Date(item.actualizado || item.creado || 0).getTime();
       if (cloudTime > localTime) {
         map.set(key, item);
       }
@@ -322,6 +331,23 @@ function mergeCloudAndLocal(cloudArr, localArr) {
 
   const merged = Array.from(map.values());
   return dedupeUsuarios(merged);
+}
+
+async function forcePushToCloud() {
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured()) {
+    if (typeof SupabaseSync.markLocalWrite === 'function') SupabaseSync.markLocalWrite();
+    if (DB && Array.isArray(DB.usuarios)) {
+      DB.usuarios = dedupeUsuarios(DB.usuarios);
+    }
+    const ok = await SupabaseSync.saveCloudData(DB);
+    if (ok) {
+      if (typeof showToast === 'function') showToast('☁️ Nube actualizada exitosamente');
+    } else {
+      if (typeof showToast === 'function') showToast('❌ Error al actualizar la nube', 'error');
+    }
+    return ok;
+  }
+  return false;
 }
 
 async function loadDB() {
@@ -1100,41 +1126,50 @@ async function guardarConfigSupabase() {
 
 async function subirDatosSupabase() {
   if (!SupabaseSync.isConfigured()) { showToast('Configura Supabase primero', 'error'); return; }
-  showToast('⬆️ Subiendo datos a Supabase...', 'info');
-  const ok = await SupabaseSync.saveCloudData(DB);
-  if (ok) showToast('✅ Datos locales subidos a la nube Supabase', 'success');
-  else showToast('⚠️ Error al subir datos a Supabase', 'error');
+  showToast('⬆️ Subiendo y sobrescribiendo la nube con los datos locales...', 'info');
+  const ok = await forcePushToCloud();
+  if (ok) {
+    showToast(`✅ ¡Nube actualizada exitosamente con tus ${DB.usuarios.length} clientes!`, 'success');
+    closeModal('modal-supabase-config');
+  } else {
+    showToast('⚠️ Error al subir datos a la nube Supabase', 'error');
+  }
 }
 
 async function descargarDatosSupabase() {
   if (!SupabaseSync.isConfigured()) { showToast('Configura Supabase primero', 'error'); return; }
-  showToast('⬇️ Descargando datos desde la nube Supabase...', 'info');
+  showToast('🔄 Sincronizando con la nube Supabase...', 'info');
   const cloud = await SupabaseSync.fetchCloudData();
   if (cloud && cloud.content && typeof cloud.content === 'object') {
     const cloudDB = cloud.content;
-    const usersCount = Array.isArray(cloudDB.usuarios) ? cloudDB.usuarios.length : 0;
-    if (usersCount > 0) {
-      DB.usuarios = cloudDB.usuarios || [];
-      DB.rutinas = cloudDB.rutinas || [];
-      DB.progresos = cloudDB.progresos || [];
-      DB.sesiones = cloudDB.sesiones || [];
-      DB.packs = cloudDB.packs || [];
 
-      if (Array.isArray(DB.usuarios)) {
-        DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
-      }
+    const mergedUsuarios = mergeCloudAndLocal(cloudDB.usuarios, DB.usuarios);
+    const mergedRutinas = mergeCloudAndLocal(cloudDB.rutinas, DB.rutinas);
+    const mergedProgresos = mergeCloudAndLocal(cloudDB.progresos, DB.progresos);
+    const mergedSesiones = mergeCloudAndLocal(cloudDB.sesiones, DB.sesiones);
+    const mergedPacks = mergeCloudAndLocal(cloudDB.packs, DB.packs);
 
-      try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
-      await PersistDB.set('romeo_db', DB);
+    DB.usuarios = mergedUsuarios;
+    DB.rutinas = mergedRutinas;
+    DB.progresos = mergedProgresos;
+    DB.sesiones = mergedSesiones;
+    DB.packs = mergedPacks;
 
-      window.dispatchEvent(new Event('romeo_db_loaded'));
-      showToast(`✅ ¡Descargados ${usersCount} clientes desde la nube Supabase! Recargando...`, 'success');
-      closeModal('modal-supabase-config');
-      setTimeout(() => window.location.reload(), 800);
-      return;
-    } else {
-      showToast('⚠️ La nube contiene 0 clientes guardados', 'warning');
+    if (Array.isArray(DB.usuarios)) {
+      DB.usuarios.forEach(u => { if (!u.estado) u.estado = 'Activo'; });
     }
+
+    try { localStorage.setItem('romeo_db', JSON.stringify(DB)); } catch(e){}
+    await PersistDB.set('romeo_db', DB);
+
+    // Sobrescribir inmediatamente la nube con el resultado limpio de la sincronización
+    await SupabaseSync.saveCloudData(DB);
+
+    window.dispatchEvent(new Event('romeo_db_loaded'));
+    showToast(`✅ Sincronización limpia completada: ${DB.usuarios.length} clientes activos`, 'success');
+    closeModal('modal-supabase-config');
+    setTimeout(() => window.location.reload(), 600);
+    return;
   } else {
     showToast('⚠️ No se encontraron datos en la nube Supabase', 'error');
   }
