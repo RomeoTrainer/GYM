@@ -8,33 +8,34 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=133" />
+  <link rel="stylesheet" href="/styles.css?v=134" />
   <link rel="manifest" href="manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#0d0d0d" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#080C14" />
 </head>
 <body>
-
-<div id="sidebar-container"></div>
-
-<div class="main-content">
-  <div id="topbar-container"></div>
-
-  <div class="page-content" style="max-width: 1000px; margin: 0 auto; padding: 24px 16px;">
-    
-    <!-- Hero Header -->
-    <div class="card" style="background: linear-gradient(135deg, rgba(255,60,172,0.12), rgba(43,134,197,0.12)); border: 1px solid rgba(255,60,172,0.3); border-radius: 20px; padding: 28px; margin-bottom: 24px; text-align: center; position: relative; overflow: hidden;">
-      <div style="font-size: 42px; margin-bottom: 8px;">⚡</div>
-      <h1 style="font-size: 26px; font-weight: 800; background: var(--grad-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 6px 0;">
-        Romeo Personal Trainer
-      </h1>
-      <div style="font-size: 13px; color: var(--text-muted); font-weight: 600;">
-        Sistema de Gestión y Control Deportivo Profesional · PWA / SPA
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <main class="main-content">
+    <div id="topbar-container"></div>
+    <div class="page-body">
+      
+      <!-- HERO BANNER -->
+      <div class="credit-hero">
+        <div class="credit-hero-glow"></div>
+        <div class="credit-logo-wrap">
+          <div class="credit-logo-badge">⚡</div>
+          <div>
+            <div class="credit-app-name">ROMEO PERSONAL TRAINER</div>
+            <div class="credit-app-tagline">Sistema Integral de Alto Rendimiento & Gestión Fitness</div>
+          </div>
+        </div>
       </div>
       <div style="margin-top: 14px; display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
         <span class="badge badge-pink" style="font-size: 11px; padding: 5px 12px;">Versión v3.0.0</span>
-        <span class="badge badge-purple" style="font-size: 11px; padding: 5px 12px;">Build v133</span>
+        <span class="badge badge-purple" style="font-size: 11px; padding: 5px 12px;">Build v134</span>
         <span class="badge" style="background: rgba(0,229,160,0.15); color: var(--green); font-size: 11px; padding: 5px 12px;">🟢 PWA Activa</span>
       </div>
     </div>
@@ -169,7 +170,7 @@
 
 <div id="toast-container"></div>
 <div id="bottom-nav-container"></div>
-<script src="persist.js?v=133"></script><script src="shared.js?v=133"></script>
+<script src="persist.js?v=134"></script><script src="shared.js?v=134"></script>
 <script>
   if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('creditos');
   if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Sistema & Créditos');

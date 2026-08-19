@@ -692,6 +692,18 @@ body {
   align-items: center;
 }
 
+.blk-row-main,
+.blk-row-meta,
+.blk-row-params,
+.blk-row-notes,
+.blk-input-wrap {
+  display: contents;
+}
+
+.blk-mob-label {
+  display: none;
+}
+
 .block-grid input, .block-grid select {
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -1361,7 +1373,77 @@ form { padding: 20px 24px; }
 @media (max-width: 768px) {
   .page-body { padding: 18px 14px; }
   .form-grid { grid-template-columns: 1fr; }
-  .block-grid { grid-template-columns: 1fr 1fr; }
+  .block-header-grid { display: none; }
+  .exercise-block {
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    margin-bottom: 12px;
+  }
+  .block-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .blk-row-main {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+  }
+  .blk-wrap-name {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  .blk-row-meta {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .blk-row-params {
+    display: grid !important;
+    grid-template-columns: 1.3fr 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .blk-row-notes {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  .blk-input-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+  }
+  .blk-mob-label {
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: var(--text-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+  }
+  .block-grid input,
+  .block-grid select {
+    height: 42px !important;
+    padding: 8px 12px !important;
+    font-size: 13.5px !important;
+    border-radius: var(--r-xs) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+  .blk-img-upload-btn {
+    height: 42px !important;
+  }
+  .btn-remove-block {
+    width: 36px !important;
+    height: 36px !important;
+    flex-shrink: 0 !important;
+    margin-bottom: 3px !important;
+  }
   .rutina-pesos { display: none; }
   .hero-banner { flex-direction: column; text-align: center; padding: 16px; }
   .hero-logo { height: 60px; max-width: 160px; }
