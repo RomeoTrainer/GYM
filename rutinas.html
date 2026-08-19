@@ -226,19 +226,21 @@
       <button class="modal-close" onclick="closeModal('modal-biblioteca-visual')">✕</button>
     </div>
     
-    <div style="flex:1; display:flex; min-height:0; overflow:hidden;">
-      <!-- Categories sidebar (left) -->
-      <div style="width:180px; border-right:1px solid var(--border); overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.15);" id="lib-groups">
+    <div class="lib-modal-body">
+      <!-- Categories sidebar (left in desktop, horizontal chips in mobile) -->
+      <div id="lib-groups" class="lib-groups-container">
         <!-- populated dynamically -->
       </div>
       
-      <!-- Grid explorer (right) -->
-      <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap: 16px; flex-shrink:0;">
-          <h3 id="lib-current-category" style="font-size:16px; font-weight:800; color:var(--pink); margin:0;">Pecho</h3>
-          <input type="text" id="lib-search-input" placeholder="🔍 Buscar ejercicio..." oninput="filtrarEjerciciosBiblioteca()" style="width:250px; padding:6px 12px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:white; outline:none;" />
-          <button type="button" class="btn-primary" onclick="abrirModalNuevoEjercicio()" style="padding:6px 12px; font-size:12px; display:flex; align-items:center; gap:6px; background:var(--grad-main); border:none; height: 32px;"><span style="font-size:14px; font-weight:700;">+</span> Nuevo Ejercicio</button>
-          <span style="font-size:11px; color:var(--text-muted); margin-left:auto;">Haz clic en un ejercicio para agregarlo directamente a tu rutina</span>
+      <!-- Grid explorer (right in desktop, full width in mobile) -->
+      <div class="lib-content-container">
+        <div class="lib-content-header">
+          <div class="lib-header-top-row">
+            <h3 id="lib-current-category" class="lib-category-title">Pecho</h3>
+            <button type="button" class="btn-primary lib-btn-new" onclick="abrirModalNuevoEjercicio()" style="padding:6px 12px; font-size:12px; display:flex; align-items:center; gap:6px; background:var(--grad-main); border:none; height: 32px;"><span style="font-size:14px; font-weight:700;">+</span> Nuevo Ejercicio</button>
+          </div>
+          <input type="text" id="lib-search-input" class="lib-search-bar" placeholder="🔍 Buscar ejercicio..." oninput="filtrarEjerciciosBiblioteca()" style="width:250px; padding:6px 12px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:white; outline:none;" />
+          <span class="lib-hint-text" style="font-size:11px; color:var(--text-muted); margin-left:auto;">Haz clic en un ejercicio para agregarlo directamente a tu rutina</span>
         </div>
         
         <div class="library-grid" id="lib-exercises-grid">
@@ -526,7 +528,12 @@
     // Set active tab
     document.querySelectorAll('.lib-tab-btn').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.getElementById('tab-' + cat);
-    if (activeBtn) activeBtn.classList.add('active');
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+      if (typeof activeBtn.scrollIntoView === 'function') {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
     
     // Set header
     document.getElementById('lib-current-category').textContent = cat;
