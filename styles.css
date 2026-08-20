@@ -1371,52 +1371,97 @@ form { padding: 20px 24px; }
 }
 
 @media (max-width: 768px) {
-  .page-body { padding: 18px 14px; }
+  .page-body { padding: 14px 10px; }
   .form-grid { grid-template-columns: 1fr; }
+  
+  /* Modals full-width on mobile with minimal outer margins */
+  .modal-overlay {
+    padding: 6px !important;
+  }
+  .modal, .modal-lg, #modal-editor .modal {
+    width: 98% !important;
+    max-width: 98% !important;
+    max-height: 94vh !important;
+    border-radius: var(--r-sm) !important;
+  }
+  .modal-header {
+    padding: 12px 14px !important;
+  }
+  .modal-footer {
+    padding: 12px 14px !important;
+  }
+  form {
+    padding: 10px 8px !important;
+  }
+  .routine-config {
+    margin: 8px 0 !important;
+    padding: 10px !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  #modal-editor [style*="padding:0 24px 8px"],
+  #modal-editor [style*="padding: 0 24px 8px"],
+  #modal-editor [style*="margin: 16px 24px 0"],
+  #modal-editor [style*="margin:16px 24px 0"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
   .block-header-grid { display: none; }
   .exercise-block {
-    padding: 14px;
-    background: rgba(255, 255, 255, 0.03);
+    padding: 12px 10px;
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
     margin-bottom: 12px;
+    width: 100%;
+    box-sizing: border-box;
   }
   .block-grid {
     display: flex !important;
     flex-direction: column !important;
-    gap: 10px !important;
+    gap: 8px !important;
+    width: 100% !important;
   }
   .blk-row-main {
     display: flex !important;
     align-items: flex-end !important;
     gap: 8px !important;
+    width: 100% !important;
   }
   .blk-wrap-name {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 4px !important;
+    gap: 3px !important;
+    min-width: 0 !important;
   }
   .blk-row-meta {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 8px !important;
+    width: 100% !important;
   }
   .blk-row-params {
     display: grid !important;
-    grid-template-columns: 1.3fr 1fr 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
     gap: 8px !important;
+    width: 100% !important;
   }
   .blk-row-notes {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 4px !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
   }
   .blk-input-wrap {
     display: flex !important;
     flex-direction: column !important;
-    gap: 4px !important;
+    gap: 3px !important;
     min-width: 0 !important;
+    width: 100% !important;
   }
   .blk-mob-label {
     display: block !important;
@@ -1425,24 +1470,35 @@ form { padding: 20px 24px; }
     color: var(--text-muted) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
   .block-grid input,
   .block-grid select {
-    height: 42px !important;
+    height: 44px !important;
     padding: 8px 12px !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
     border-radius: var(--r-xs) !important;
     box-sizing: border-box !important;
     width: 100% !important;
   }
   .blk-img-upload-btn {
-    height: 42px !important;
+    height: 44px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+  }
+  .row-img-preview {
+    width: 44px !important;
+    height: 44px !important;
   }
   .btn-remove-block {
-    width: 36px !important;
-    height: 36px !important;
+    width: 40px !important;
+    height: 40px !important;
     flex-shrink: 0 !important;
-    margin-bottom: 3px !important;
+    margin-bottom: 2px !important;
+    font-size: 16px !important;
   }
   .rutina-pesos { display: none; }
   .hero-banner { flex-direction: column; text-align: center; padding: 16px; }

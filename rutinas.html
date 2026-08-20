@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Romeo Personal Trainer — Creador de Rutinas</title>
-  <meta name="description" content="Diseña rutinas de entrenamiento por bloques: series, repeticiones, peso y tiempo de descanso." />  <link rel="stylesheet" href="/styles.css?v=134" />
+  <meta name="description" content="Diseña rutinas de entrenamiento por bloques: series, repeticiones, peso y tiempo de descanso." />  <link rel="stylesheet" href="/styles.css?v=135" />
   <meta name="theme-color" content="#00E5A0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -351,7 +351,7 @@
 
 <div id="toast-container"></div>
 <div id="bottom-nav-container"></div>
-<script src="persist.js?v=134"></script><script src="shared.js?v=134"></script>
+<script src="persist.js?v=135"></script><script src="shared.js?v=135"></script>
 <script>
   if (document.getElementById('sidebar-container')) document.getElementById('sidebar-container').innerHTML = buildSidebar('rutinas');
   if (document.getElementById('topbar-container')) document.getElementById('topbar-container').innerHTML = buildTopbar('Creador de Rutinas');
@@ -833,13 +833,13 @@
             <span class="blk-mob-label">Peso (kg)</span>
             <input type="number" placeholder="60" class="blk-peso" value="${data?.peso||''}" step="0.5" />
           </div>
+        </div>
+
+        <div class="blk-row-notes">
           <div class="blk-input-wrap blk-wrap-descanso">
             <span class="blk-mob-label">Descanso (s)</span>
             <input type="number" placeholder="60" class="blk-descanso" value="${data?.descanso||''}" min="15" />
           </div>
-        </div>
-
-        <div class="blk-row-notes">
           <div class="blk-input-wrap blk-wrap-notes">
             <span class="blk-mob-label">Notas / Indicaciones</span>
             <input type="text" placeholder="Agarre neutro, rango completo..." class="blk-notas" value="${data?.notes||data?.notas||''}" />
