@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Romeo Personal Trainer — Clientes</title>
-  <meta name="description" content="Roster de clientes: métricas de ingresos, tasa de completitud, perfil completo y barra de progreso semanal." />  <link rel="stylesheet" href="/styles.css?v=135" />
+  <meta name="description" content="Roster de clientes: métricas de ingresos, tasa de completitud, perfil completo y barra de progreso semanal." />  <link rel="stylesheet" href="styles.css?v=135" />
   <meta name="theme-color" content="#00E5A0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -28,17 +28,26 @@
     <div class="summary-bar" id="summary-bar">
       <div class="summary-item"><div class="summary-val" id="sum-clientes">0</div><div class="summary-lbl">Clientes Totales</div></div>
       <div class="summary-item"><div class="summary-val" id="sum-revenue">$0</div><div class="summary-lbl">Ingresos / Mes</div></div>
-      <div class="summary-item"><div class="summary-val" id="sum-completitud">0%</div><div class="summary-lbl">Completitud Promedio</div></div>
-      <div class="summary-item"><div class="summary-val" id="sum-rutinas">0</div><div class="summary-lbl">Rutinas Activas</div></div>
+      <div class="summary-item"><div class="summary-val" id="sum-al-dia" style="color:var(--green)">0</div><div class="summary-lbl">🟢 Cuotas Al Día</div></div>
+      <div class="summary-item"><div class="summary-val" id="sum-vencidos" style="color:var(--red)">0</div><div class="summary-lbl">🔴 Por Cobrar / Vencidos</div></div>
     </div>
 
     <!-- Status Filter chips -->
-    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
       <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-right:8px;">Estado:</span>
       <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Activo', this)">🟢 Activos</button>
       <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Pausado', this)">🟡 Pausados</button>
       <button class="filter-btn filter-status-btn" onclick="setFiltroEstado('Inactivo', this)">🔴 Inactivos</button>
       <button class="filter-btn active filter-status-btn" onclick="setFiltroEstado('Todos', this)">📁 Todos</button>
+    </div>
+
+    <!-- Payment / Subscription Filter chips -->
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-right:8px;">💳 Cobro:</span>
+      <button class="filter-btn active filter-pago-btn" onclick="setFiltroPago('Todos', this)">Todos</button>
+      <button class="filter-btn filter-pago-btn" onclick="setFiltroPago('al_dia', this)">🟢 Al Día</button>
+      <button class="filter-btn filter-pago-btn" onclick="setFiltroPago('por_vencer', this)">🟡 Por Vencer (≤5d)</button>
+      <button class="filter-btn filter-pago-btn" onclick="setFiltroPago('vencido', this)">🔴 Vencidos</button>
     </div>
 
     <!-- Objective Filter chips -->
@@ -81,8 +90,14 @@
         <div class="form-group"><label>Edad *</label><input type="number" id="u-edad" placeholder="25" min="10" max="100" required /></div>
         <div class="form-group"><label>Género</label><select id="u-genero"><option>Masculino</option><option>Femenino</option><option>Otro</option></select></div>
         <div class="form-group"><label>Email</label><input type="email" id="u-email" placeholder="juan@email.com" /></div>
-        <div class="form-group"><label>Teléfono</label><input type="text" id="u-telefono" placeholder="+57 300 000 0000" /></div>
+        <div class="form-group"><label>Teléfono (WhatsApp)</label><input type="text" id="u-telefono" placeholder="+57 300 000 0000" /></div>
+      </div>
+      <div class="form-section-title">Membresía y Cobro Mensual</div>
+      <div class="form-grid">
         <div class="form-group"><label>Tarifa Mensual ($)</label><input type="number" id="u-tarifa" placeholder="150000" step="1000" /></div>
+        <div class="form-group"><label>Fecha de Inicio / Último Pago</label><input type="date" id="u-fecha-inicio-pago" onchange="autoCalcularFechaFin()" /></div>
+        <div class="form-group"><label>Fecha de Vencimiento</label><input type="date" id="u-fecha-fin-pago" /></div>
+        <div class="form-group full" style="margin-top:-6px;"><small style="color:var(--text-muted);font-size:11px;">💡 Al seleccionar la fecha de pago, la fecha de vencimiento se calcula automáticamente a 1 mes (+30 días).</small></div>
       </div>
       <div class="form-section-title">Medidas Físicas Iniciales</div>
       <div class="form-grid">
@@ -208,11 +223,19 @@
   if (document.getElementById('toast-container')) document.getElementById('toast-container').innerHTML = buildToast();
 
   let filtroEstado = 'Todos';
+  let filtroPago = 'Todos';
   let filtroObjetivo = '';
 
   function setFiltroEstado(val, btn) {
     filtroEstado = val;
     document.querySelectorAll('.filter-status-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderUsuarios();
+  }
+
+  function setFiltroPago(val, btn) {
+    filtroPago = val;
+    document.querySelectorAll('.filter-pago-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
     renderUsuarios();
   }
@@ -224,26 +247,60 @@
     renderUsuarios();
   }
 
+  function autoCalcularFechaFin() {
+    const inicio = document.getElementById('u-fecha-inicio-pago').value;
+    if (inicio) {
+      document.getElementById('u-fecha-fin-pago').value = sumarUnMes(inicio);
+    }
+  }
+
   function updateSummary() {
-    document.getElementById('sum-clientes').textContent = DB.usuarios.length;
+    const totalUsers = (DB.usuarios || []).length;
+    document.getElementById('sum-clientes').textContent = totalUsers;
     document.getElementById('sum-revenue').textContent = '$' + calcRevenue().toLocaleString('es-CO');
-    document.getElementById('sum-completitud').textContent = calcCompletitudPromedio() + '%';
-    document.getElementById('sum-rutinas').textContent = DB.rutinas.length;
+
+    let alDia = 0;
+    let vencidos = 0;
+    let sumaPorCobrar = 0;
+
+    (DB.usuarios || []).forEach(u => {
+      const est = calcularEstadoMembresia(u);
+      if (est.estado === 'al_dia') {
+        alDia++;
+      } else if (est.estado === 'vencido' || est.estado === 'por_vencer') {
+        vencidos++;
+        sumaPorCobrar += (parseFloat(u.tarifa) || 0);
+      }
+    });
+
+    const sumAlDiaEl = document.getElementById('sum-al-dia');
+    if (sumAlDiaEl) sumAlDiaEl.textContent = alDia;
+
+    const sumVencidosEl = document.getElementById('sum-vencidos');
+    if (sumVencidosEl) {
+      sumVencidosEl.textContent = `${vencidos} ($${sumaPorCobrar.toLocaleString('es-CO')})`;
+    }
   }
 
   function renderUsuarios() {
     updateSummary();
     const grid = document.getElementById('usuarios-grid');
     const q = document.getElementById('search-input').value.toLowerCase();
-    let lista = DB.usuarios;
+    let lista = DB.usuarios || [];
     if (q) lista = lista.filter(u => u.nombre.toLowerCase().includes(q));
     if (filtroObjetivo) lista = lista.filter(u => u.objetivo === filtroObjetivo);
     if (filtroEstado !== 'Todos') {
       lista = lista.filter(u => (u.estado || 'Activo') === filtroEstado);
     }
+    if (filtroPago !== 'Todos') {
+      lista = lista.filter(u => {
+        const est = calcularEstadoMembresia(u);
+        return est.estado === filtroPago;
+      });
+    }
 
     if (lista.length === 0) {
-      grid.innerHTML = `<div class="empty-state"><span class="empty-icon">👤</span><h3>${q||filtroObjetivo||filtroEstado!=='Todos'?'Sin resultados':'Sin clientes registrados'}</h3><p>${q||filtroObjetivo||filtroEstado!=='Todos'?'Ajusta el filtro o búsqueda':'Comienza registrando tu primer cliente.'}</p>${!q&&!filtroObjetivo&&filtroEstado==='Activo'?'<button class="btn-primary" onclick="abrirModal()">Agregar Cliente</button>':''}</div>`;
+      grid.innerHTML = `<div class="empty-state"><span class="empty-icon">👤</span><h3>${q||filtroObjetivo||filtroEstado!=='Todos'||filtroPago!=='Todos'?'Sin resultados':'Sin clientes registrados'}</h3><p>${q||filtroObjetivo||filtroEstado!=='Todos'||filtroPago!=='Todos'?'Ajusta el filtro o búsqueda':'Comienza registrando tu primer cliente.'}</p>${!q&&!filtroObjetivo&&filtroEstado==='Activo'?'<button class="btn-primary" onclick="abrirModal()">Agregar Cliente</button>':''}</div>`;
       return;
     }
 
@@ -252,11 +309,12 @@
     grid.innerHTML = lista.map(u => {
       const avClass = avatarClass(u.nombre);
       const ini = initials(u.nombre);
-      const rutinas = DB.rutinas.filter(r => r.usuarioId === u.id).length;
+      const rutinas = (DB.rutinas || []).filter(r => r.usuarioId === u.id).length;
       const completitud = calcCompletitudUsuario(u.id);
       const b = bmi(u.peso, u.estatura);
       const proximaSesion = (DB.sesiones || []).filter(s => s && s.usuarioId === u.id && s.estado === 'pendiente' && s.fecha >= new Date().toISOString().split('T')[0]).sort((a,b2)=>(a.fecha || '').localeCompare(b2.fecha || ''))[0];
       const badgeCls = badgeClass(u.nivel);
+      const estPago = calcularEstadoMembresia(u);
       
       const warningColor = completitud < 50 ? 'var(--red)' : 'var(--pink)';
       const warningLabel = completitud < 50 ? `<span style="font-size:10px;background:rgba(255,69,96,0.15);color:var(--red);padding:2px 6px;border-radius:4px;font-weight:700;display:inline-flex;align-items:center;gap:3px;vertical-align:middle;margin-left:4px;">⚠️ Baja</span>` : '';
@@ -288,6 +346,17 @@
           <div class="user-stat"><div class="user-stat-val">${b}</div><div class="user-stat-lbl">IMC</div></div>
         </div>
 
+        <!-- Sección de Pago & Mensualidad -->
+        <div style="background:var(--bg-surface); padding:8px 10px; border-radius:var(--r-xs); border:1px solid var(--border); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <div>
+            <div style="font-size:9px; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Mensualidad</div>
+            <div style="font-size:11px; font-weight:600; color:var(--text-primary); margin-top:1px;">${estPago.fechaFin ? `Vence: ${formatDate(estPago.fechaFin)}` : 'Sin fecha definida'}</div>
+          </div>
+          <span class="badge" style="background:${estPago.bg}; color:${estPago.color}; border:1px solid ${estPago.border||'transparent'}; font-weight:700; font-size:10px;" title="${estPago.detalle || ''}">
+            ${estPago.icono} ${estPago.label}
+          </span>
+        </div>
+
         <div class="user-progress-section">
           <div class="user-progress-label" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
             <span>Completitud Semanal${warningLabel}</span>
@@ -306,9 +375,9 @@
 
         <div class="user-card-actions">
           <button class="btn-ghost" style="flex:1" onclick="verPerfil('${u.id}')">👁 Perfil</button>
-          <button class="btn-ghost" onclick="programarSesion('${u.id}')" title="Programar Sesión">📅</button>
-          <button class="btn-ghost" onclick="abrirReporteWhatsApp('${u.id}')" title="Generar Reporte WhatsApp" style="color:#25D366; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px 8px; flex:1;">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.1.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg> Reporte WA
+          <button class="btn-ghost" style="color:var(--green); border-color:rgba(0,229,160,0.3); background:rgba(0,229,160,0.08); font-weight:700;" onclick="renovarMembresiaUsuario('${u.id}')" title="Renovar +1 Mes">💳 Renovar</button>
+          <button class="btn-ghost" onclick="abrirRecordatorioCobroWA('${u.id}')" title="Recordatorio de Cobro WhatsApp" style="color:#25D366; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px 8px;">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.1.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg> Cobro
           </button>
           <button class="btn-ghost" onclick="abrirModal('${u.id}')" title="Editar Cliente">✏️</button>
           <button class="btn-ghost btn-danger" onclick="eliminarUsuario('${u.id}')" title="Eliminar Cliente">🗑️</button>
@@ -330,9 +399,18 @@
     document.getElementById('u-fotoIniPerfil').value = '';
     document.getElementById('u-fotoIniEspalda').value = '';
     document.getElementById('u-grasa-pct').value = '';
+    document.getElementById('u-fecha-inicio-pago').value = '';
+    document.getElementById('u-fecha-fin-pago').value = '';
     updatePhotoPreview('iniFrente', '');
     updatePhotoPreview('iniPerfil', '');
     updatePhotoPreview('iniEspalda', '');
+
+    if (!uid) {
+      // Valores por defecto al registrar nuevo cliente
+      const hoyStr = new Date().toISOString().split('T')[0];
+      document.getElementById('u-fecha-inicio-pago').value = hoyStr;
+      document.getElementById('u-fecha-fin-pago').value = sumarUnMes(hoyStr);
+    }
 
     if (uid) {
       const u = DB.usuarios.find(x => x.id === uid);
@@ -345,6 +423,8 @@
       document.getElementById('u-email').value = u.email || '';
       document.getElementById('u-telefono').value = u.telefono || '';
       document.getElementById('u-tarifa').value = u.tarifa || '';
+      document.getElementById('u-fecha-inicio-pago').value = u.fechaInicioMembresia || '';
+      document.getElementById('u-fecha-fin-pago').value = u.fechaFinMembresia || (u.fechaInicioMembresia ? sumarUnMes(u.fechaInicioMembresia) : '');
       document.getElementById('u-peso').value = u.peso;
       document.getElementById('u-peso-objetivo').value = u.pesoObjetivo || '';
       document.getElementById('u-estatura').value = u.estatura;
@@ -396,6 +476,9 @@
         showToast('⚠️ Ingresa el nombre del cliente', 'error');
         return;
       }
+      const fechaInicioPago = document.getElementById('u-fecha-inicio-pago').value || null;
+      const fechaFinPago = document.getElementById('u-fecha-fin-pago').value || (fechaInicioPago ? sumarUnMes(fechaInicioPago) : null);
+
       const u = {
         id: id || genId(),
         nombre: nombre,
@@ -404,6 +487,8 @@
         email: document.getElementById('u-email').value.trim(),
         telefono: document.getElementById('u-telefono').value.trim(),
         tarifa: parseFloat(document.getElementById('u-tarifa').value) || null,
+        fechaInicioMembresia: fechaInicioPago,
+        fechaFinMembresia: fechaFinPago,
         peso: parseFloat(document.getElementById('u-peso').value) || 0,
         pesoObjetivo: parseFloat(document.getElementById('u-peso-objetivo').value) || null,
         estatura: parseFloat(document.getElementById('u-estatura').value) || 0,
@@ -511,6 +596,31 @@
         </div>
       </div>
       <div class="perfil-body">
+        <div class="form-section-title" style="padding-top:0">Membresía y Cobro Mensual</div>
+        <div style="background:var(--bg-surface); padding:16px; border-radius:var(--r-sm); border:1px solid var(--border); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="font-size:32px;">${calcularEstadoMembresia(u).icono}</div>
+            <div>
+              <div style="font-weight:800; font-size:15px; color:${calcularEstadoMembresia(u).color}; display:flex; align-items:center; gap:8px;">
+                <span>${calcularEstadoMembresia(u).label}</span>
+                ${u.tarifa ? `<span style="font-size:12px; color:var(--text-muted); font-weight:normal;">($${parseInt(u.tarifa).toLocaleString('es-CO')}/mes)</span>` : ''}
+              </div>
+              <div style="font-size:12px; color:var(--text-secondary); margin-top:3px;">
+                ${u.fechaInicioMembresia ? `Último pago: <strong>${formatDate(u.fechaInicioMembresia)}</strong>` : 'Sin fecha de pago'} 
+                ${u.fechaFinMembresia ? ` · Próximo vencimiento: <strong>${formatDate(u.fechaFinMembresia)}</strong>` : ''}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn-primary" style="padding:7px 14px; font-size:12px; border-radius:var(--r-xs);" onclick="renovarMembresiaUsuario('${u.id}')">💳 Renovar +1 Mes</button>
+            <button class="btn-ghost" style="color:#25D366; border-color:rgba(37,211,102,0.3); font-size:12px; display:inline-flex; align-items:center; gap:5px; border-radius:var(--r-xs);" onclick="abrirRecordatorioCobroWA('${u.id}')">
+              <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.453L0 24zm6.59-4.846c1.6.95 2.568 1.487 4.595 1.488 5.489 0 9.952-4.467 9.955-9.961.002-2.661-1.033-5.164-2.915-7.049C16.345 1.748 13.847.712 11.2.713c-5.492 0-9.957 4.468-9.96 9.961-.001 2.072.548 3.09 1.524 4.77l-.99 3.612 3.883-.989zM17.15 14.88c-.285-.143-1.687-.832-1.947-.927-.26-.096-.45-.143-.64.143-.19.285-.736.927-.9.1.118-.175-.157-.285-.327-.585-.17-.3-.024-.556.048-.7.072-.143.19-.285.285-.429.096-.143.12-.24.18-.383.06-.143.03-.285-.015-.429-.045-.143-.45-1.085-.615-1.485-.164-.393-.347-.323-.48-.328l-.408-.005c-.143 0-.38.053-.578.271-.198.219-.759.742-.759 1.808 0 1.066.775 2.094.883 2.238.109.143 1.524 2.327 3.69 3.262.515.222.917.355 1.23.455.518.165.989.141 1.362.085.415-.062 1.272-.52 1.45-.989.18-.469.18-.871.127-.954-.053-.083-.198-.129-.482-.272z"/></svg>
+              Recordatorio WA
+            </button>
+          </div>
+        </div>
+
+        <div class="form-section-title">Resumen Físico y Rendimiento</div>
         <div class="medidas-grid grid-4">
           <div class="medida-card"><div class="val">${u.peso} kg</div><div class="lbl">Peso</div></div>
           <div class="medida-card"><div class="val">${u.estatura} cm</div><div class="lbl">Estatura</div></div>

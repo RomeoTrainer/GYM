@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Romeo Personal Trainer — Dashboard</title>
-  <meta name="description" content="Vista estratégica: clientes activos, alertas, sesiones del día, volumen semanal e ingresos." />  <link rel="stylesheet" href="/styles.css?v=135" />
+  <meta name="description" content="Vista estratégica: clientes activos, alertas, sesiones del día, volumen semanal e ingresos." />  <link rel="stylesheet" href="styles.css?v=135" />
   <meta name="theme-color" content="#00E5A0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -303,6 +303,35 @@
   // ── Alerts ──
   (function buildAlerts() {
     var alerts = [];
+
+    if (typeof calcularEstadoMembresia === 'function' && Array.isArray(DB.usuarios)) {
+      var vencidos = DB.usuarios.filter(function(u){
+        var est = calcularEstadoMembresia(u);
+        return est.estado === 'vencido';
+      });
+      if (vencidos.length > 0) {
+        alerts.push({
+          type: 'danger',
+          icon: '💳',
+          title: vencidos.length + ' mensualidad(es) vencida(s)',
+          sub: vencidos.slice(0, 2).map(function(u){ return u.nombre; }).join(', ') + (vencidos.length > 2 ? ' y más...' : '') + ' — Cobro pendiente'
+        });
+      }
+
+      var porVencer = DB.usuarios.filter(function(u){
+        var est = calcularEstadoMembresia(u);
+        return est.estado === 'por_vencer';
+      });
+      if (porVencer.length > 0) {
+        alerts.push({
+          type: 'warn',
+          icon: '⏳',
+          title: porVencer.length + ' mensualidad(es) por vencer pronto',
+          sub: porVencer.slice(0, 2).map(function(u){ return u.nombre; }).join(', ') + (porVencer.length > 2 ? ' y más...' : '')
+        });
+      }
+    }
+
     var sinRutina = DB.usuarios.filter(function(u){
       return !DB.rutinas || !DB.rutinas.some(function(r){return r.usuarioId===u.id;});
     });

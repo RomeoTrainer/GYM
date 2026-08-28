@@ -647,6 +647,158 @@ function bmiCategory(b) {
   return 'Obesidad';
 }
 
+// ===================== GESTIÓN DE MEMBRESÍAS Y PAGOS =====================
+function sumarUnMes(fechaStr) {
+  if (!fechaStr) return '';
+  try {
+    const partes = String(fechaStr).split('T')[0].split('-');
+    const y = parseInt(partes[0], 10);
+    const m = parseInt(partes[1], 10) - 1;
+    const d = parseInt(partes[2], 10);
+    
+    const date = new Date(y, m, d);
+    date.setMonth(date.getMonth() + 1);
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch(e) {
+    return '';
+  }
+}
+
+function calcularEstadoMembresia(u) {
+  if (!u) return { estado: 'sin_fecha', diasRestantes: 0, label: 'Sin datos', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.06)', icono: '⚪' };
+  
+  const finStr = u.fechaFinMembresia || (u.fechaInicioMembresia ? sumarUnMes(u.fechaInicioMembresia) : null);
+  if (!finStr) {
+    return {
+      estado: 'sin_fecha',
+      diasRestantes: 0,
+      fechaInicio: u.fechaInicioMembresia || null,
+      fechaFin: null,
+      label: 'Sin fecha de pago',
+      detalle: 'Configura fecha de cobro',
+      color: 'var(--text-muted)',
+      bg: 'rgba(255,255,255,0.06)',
+      border: 'rgba(255,255,255,0.1)',
+      icono: '⚪'
+    };
+  }
+
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  
+  const partes = finStr.split('T')[0].split('-');
+  const fechaFin = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+  fechaFin.setHours(0,0,0,0);
+
+  const diffMs = fechaFin.getTime() - hoy.getTime();
+  const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDias < 0) {
+    const diasVencido = Math.abs(diffDias);
+    return {
+      estado: 'vencido',
+      diasRestantes: diffDias,
+      fechaInicio: u.fechaInicioMembresia || null,
+      fechaFin: finStr,
+      label: diasVencido === 1 ? 'Vencido ayer' : `Vencido hace ${diasVencido} d`,
+      detalle: `Venció el ${formatDate(finStr)}`,
+      color: 'var(--red)',
+      bg: 'rgba(255,69,96,0.15)',
+      border: 'rgba(255,69,96,0.35)',
+      icono: '🔴'
+    };
+  } else if (diffDias <= 5) {
+    return {
+      estado: 'por_vencer',
+      diasRestantes: diffDias,
+      fechaInicio: u.fechaInicioMembresia || null,
+      fechaFin: finStr,
+      label: diffDias === 0 ? 'Vence HOY' : diffDias === 1 ? 'Vence mañana' : `Vence en ${diffDias} d`,
+      detalle: `Vence el ${formatDate(finStr)}`,
+      color: 'var(--yellow)',
+      bg: 'rgba(255,193,7,0.15)',
+      border: 'rgba(255,193,7,0.35)',
+      icono: '🟡'
+    };
+  } else {
+    return {
+      estado: 'al_dia',
+      diasRestantes: diffDias,
+      fechaInicio: u.fechaInicioMembresia || null,
+      fechaFin: finStr,
+      label: `Al día (${diffDias} d)`,
+      detalle: `Vence el ${formatDate(finStr)}`,
+      color: 'var(--green)',
+      bg: 'rgba(0,229,160,0.15)',
+      border: 'rgba(0,229,160,0.35)',
+      icono: '🟢'
+    };
+  }
+}
+
+async function renovarMembresiaUsuario(uid) {
+  const u = (DB.usuarios || []).find(x => x.id === uid);
+  if (!u) return;
+
+  const hoyStr = new Date().toISOString().split('T')[0];
+  let inicio = hoyStr;
+  if (u.fechaFinMembresia && u.fechaFinMembresia >= hoyStr) {
+    inicio = u.fechaFinMembresia;
+  }
+  const nuevoFin = sumarUnMes(inicio);
+
+  u.fechaInicioMembresia = hoyStr;
+  u.fechaFinMembresia = nuevoFin;
+  u.estado = 'Activo';
+  u.actualizado = new Date().toISOString();
+
+  if (!Array.isArray(u.historialPagos)) u.historialPagos = [];
+  u.historialPagos.push({
+    id: typeof genId === 'function' ? genId() : 'p_' + Date.now(),
+    fecha: hoyStr,
+    monto: parseFloat(u.tarifa) || 0,
+    periodoInicio: inicio,
+    periodoFin: nuevoFin
+  });
+
+  await saveDB();
+  if (typeof renderUsuarios === 'function') renderUsuarios();
+  if (typeof verPerfil === 'function' && window.currentPerfilUserId === uid) verPerfil(uid);
+  showToast(`✅ Mensualidad renovada para ${u.nombre} hasta el ${formatDate(nuevoFin)}`);
+}
+
+function abrirRecordatorioCobroWA(uid) {
+  const u = (DB.usuarios || []).find(x => x.id === uid);
+  if (!u) return;
+  if (!u.telefono) {
+    showToast('⚠️ El cliente no tiene teléfono registrado', 'warning');
+    return;
+  }
+  const est = calcularEstadoMembresia(u);
+  const tarifaFmt = u.tarifa ? `$${parseInt(u.tarifa).toLocaleString('es-CO')}` : 'tu mensualidad';
+  const fechaFmt = est.fechaFin ? formatDate(est.fechaFin) : 'próximamente';
+
+  let msg = '';
+  if (est.estado === 'vencido') {
+    msg = `Hola ${u.nombre} 👋! Te saluda tu entrenador Romeo. Te escribo para recordarte que tu mensualidad de entrenamiento (${tarifaFmt}) venció el ${fechaFmt}. ¿Me confirmas para renovar tu cupo y seguir con tu plan? 💪🔥`;
+  } else if (est.estado === 'por_vencer') {
+    msg = `Hola ${u.nombre} 👋! Te saluda tu entrenador Romeo. Te recuerdo que tu mensualidad (${tarifaFmt}) vence el ${fechaFmt}. Quedo atento a la renovación para no interrumpir tu progreso. 🏋️‍♂️✨`;
+  } else {
+    msg = `Hola ${u.nombre} 👋! Te saluda tu entrenador Romeo. Tu membresía actual (${tarifaFmt}) está activa hasta el ${fechaFmt}. ¡A seguir dándolo todo en los entrenamientos! 💪🚀`;
+  }
+
+  let cleanPhone = u.telefono.replace(/[^\d+]/g, '');
+  if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
+  if (cleanPhone.length === 10 && !cleanPhone.startsWith('57')) cleanPhone = '57' + cleanPhone;
+
+  const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
 // ===================== COMPUTED STATS =====================
 function calcRevenue() {
   return (DB.usuarios || []).reduce((sum, u) => sum + (parseFloat(u.tarifa) || 0), 0);
